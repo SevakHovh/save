@@ -1,0 +1,6 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    alias(libs.plugins.android.application) apply false
+    // Hilt plugin is applied in the app module
+    alias(libs.plugins.hilt.android.plugin) apply false
+}
