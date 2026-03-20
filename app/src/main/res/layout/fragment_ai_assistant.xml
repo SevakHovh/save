@@ -23,11 +23,22 @@
         android:id="@+id/ll_input_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingTop="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_ai_mode"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:layout_marginEnd="8dp"
+            android:text="Regular"
+            app:cornerRadius="24dp"
+            app:icon="@android:drawable/ic_menu_info_details" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="0dp"
@@ -60,6 +71,7 @@
             android:layout_width="wrap_content"
             android:layout_height="56dp"
             android:text="@string/send"
+            app:cornerRadius="24dp"
             app:icon="@android:drawable/ic_menu_send"
             app:iconGravity="textStart" />
     </LinearLayout>
