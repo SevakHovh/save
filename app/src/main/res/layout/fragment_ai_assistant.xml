@@ -39,7 +39,9 @@
             app:boxCornerRadiusBottomStart="24dp"
             app:boxCornerRadiusTopEnd="24dp"
             app:boxCornerRadiusTopStart="24dp"
-            app:hintEnabled="false">
+            app:hintEnabled="false"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/primary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_user_input"
@@ -48,7 +50,9 @@
                 android:hint="@string/ai_placeholder"
                 android:inputType="textMultiLine"
                 android:maxLines="3"
-                android:minLines="1" />
+                android:minLines="1"
+                android:textColor="@color/on_background"
+                android:textColorHint="@color/on_background" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.button.MaterialButton

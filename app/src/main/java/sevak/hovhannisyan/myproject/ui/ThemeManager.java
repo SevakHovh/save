@@ -1,43 +1,49 @@
 package sevak.hovhannisyan.myproject.ui;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.appcompat.app.AppCompatDelegate;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
+import sevak.hovhannisyan.myproject.di.AppModule;
+
 /**
- * Simple helper to manage app theme (light / dark) and persist user choice.
+ * Singleton to manage app theme (light / dark / system) and persist user choice.
  */
+@Singleton
 public class ThemeManager {
 
-    private static final String PREFS_NAME = "save_theme_prefs";
-    private static final String KEY_THEME_MODE = "theme_mode";
+    private final SharedPreferences prefs;
 
     public static final int MODE_LIGHT = AppCompatDelegate.MODE_NIGHT_NO;
     public static final int MODE_DARK = AppCompatDelegate.MODE_NIGHT_YES;
+    public static final int MODE_SYSTEM = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
 
-    private ThemeManager() {
-        // no-op
+    private static final String KEY_THEME_MODE = "theme_mode";
+
+    @Inject
+    public ThemeManager(@Named(AppModule.THEME_PREFS) SharedPreferences prefs) {
+        this.prefs = prefs;
     }
 
-    public static void applySavedTheme(Context context) {
-        int mode = getSavedMode(context);
+    public void applySavedTheme() {
+        int mode = getSavedMode();
         AppCompatDelegate.setDefaultNightMode(mode);
     }
 
-    public static void setTheme(Context context, int mode) {
-        saveMode(context, mode);
+    public void setTheme(int mode) {
+        saveMode(mode);
         AppCompatDelegate.setDefaultNightMode(mode);
     }
 
-    private static int getSavedMode(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        return prefs.getInt(KEY_THEME_MODE, MODE_LIGHT);
+    public int getSavedMode() {
+        return prefs.getInt(KEY_THEME_MODE, MODE_SYSTEM);
     }
 
-    private static void saveMode(Context context, int mode) {
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    private void saveMode(int mode) {
         prefs.edit().putInt(KEY_THEME_MODE, mode).apply();
     }
 }
-

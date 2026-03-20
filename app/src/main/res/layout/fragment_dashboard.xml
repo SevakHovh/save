@@ -13,53 +13,22 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Quick action buttons row -->
+        <!-- Header row with only Settings -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            android:gravity="center"
+            android:gravity="end"
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_quick_add"
-                style="@style/Widget.Material3.Button.FilledTonalButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:text="@string/add_transaction"
-                android:textAllCaps="false"
-                app:cornerRadius="24dp"
-                app:icon="@android:drawable/ic_input_add"
-                app:iconGravity="textStart" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_insights"
-                style="@style/Widget.Material3.Button.FilledTonalButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="@string/dashboard_title"
-                android:textAllCaps="false"
-                app:cornerRadius="24dp"
-                app:icon="@android:drawable/ic_menu_sort_by_size"
-                app:iconGravity="textStart" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_settings"
-                style="@style/Widget.Material3.Button.ElevatedButton"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
                 android:text="@string/settings"
                 android:textAllCaps="false"
-                android:textColor="@color/black"
-                app:backgroundTint="@color/settings_lime"
-                app:cornerRadius="999dp"
+                app:cornerRadius="24dp"
                 app:icon="@android:drawable/ic_menu_manage"
                 app:iconGravity="textStart" />
         </LinearLayout>
@@ -174,22 +143,140 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <!-- Recent Transactions Section -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="@string/recent_transactions"
-            android:textColor="@color/on_surface"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_recent_transactions"
+        <!-- Saving Goal Card -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            tools:listitem="@layout/item_transaction" />
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/goal_title"
+                    android:textColor="@color/on_surface"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/et_goal_amount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:hint="@string/goal_hint"
+                    android:inputType="numberDecimal"
+                    android:backgroundTint="@color/primary"
+                    android:textColor="@color/on_surface"
+                    android:textColorHint="@color/on_surface" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_set_goal"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/goal_set"
+                    android:textAllCaps="false"
+                    app:cornerRadius="24dp" />
+
+                <TextView
+                    android:id="@+id/tv_goal_daily"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="@color/on_surface"
+                    android:textSize="14sp"
+                    tools:text="You should save $5.00 per day." />
+
+                <TextView
+                    android:id="@+id/tv_goal_progress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/on_surface"
+                    android:textSize="14sp"
+                    tools:text="Progress: 40% of your goal saved." />
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/progress_goal"
+                    style="@style/Widget.Material3.LinearProgressIndicator"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:trackThickness="8dp"
+                    app:indicatorColor="@color/primary"
+                    app:trackCornerRadius="999dp"
+                    app:trackColor="@color/secondary_container" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Market Watch Card (Stocks & Crypto) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_market"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Market Watch"
+                        android:textColor="@color/on_surface"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                        
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_media_play"
+                        app:tint="@color/primary" />
+                </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/pb_market"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/layout_market_items"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 

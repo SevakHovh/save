@@ -2,13 +2,12 @@ plugins {
     alias(libs.plugins.android.application)
     // Hilt plugin for dependency injection (Java-compatible)
     alias(libs.plugins.hilt.android.plugin)
+    id("com.google.gms.google-services")
 }
 
 android {
     namespace = "sevak.hovhannisyan.myproject"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "sevak.hovhannisyan.myproject"
@@ -45,6 +44,9 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     
+    // Core Splash Screen
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
     // Room (Java - annotationProcessor)
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)
@@ -52,7 +54,6 @@ dependencies {
     // Hilt (Java - annotationProcessor)
     implementation(libs.hilt.android)
     annotationProcessor(libs.hilt.compiler)
-    annotationProcessor(libs.hilt.androidx.compiler)
     
     // Navigation
     implementation(libs.navigation.fragment)
@@ -62,6 +63,20 @@ dependencies {
     implementation(libs.lifecycle.viewmodel)
     implementation(libs.lifecycle.livedata)
     implementation(libs.lifecycle.runtime)
+
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+
+    // Retrofit & OkHttp
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+
+    // Charts
+    implementation(libs.mpandroidchart)
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

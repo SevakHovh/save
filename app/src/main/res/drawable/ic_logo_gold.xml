@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- Outer gold ring -->
+    <path
+        android:pathData="M50,10A40,40 0,1 0,90,50A40,40 0,0 0,50,10ZM50,85A35,35 0,1 1,85,50A35,35 0,0 1,50,85Z"
+        android:fillColor="#D4AF37"/>
+    <!-- The $ symbol -->
+    <path
+        android:pathData="M50,25V75M40,35Q40,30 50,30Q60,30 60,35Q60,40 50,45Q40,50 40,55Q40,60 50,60Q60,60 60,55"
+        android:strokeColor="#D4AF37"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"/>
+    <!-- The upward arrow -->
+    <path
+        android:pathData="M65,45L80,30M80,30H70M80,30V40"
+        android:strokeColor="#D4AF37"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

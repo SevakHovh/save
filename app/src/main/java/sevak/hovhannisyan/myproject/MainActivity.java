@@ -8,13 +8,13 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import sevak.hovhannisyan.myproject.R;
 
 /**
  * Main Activity with Bottom Navigation and Navigation Component setup.
@@ -23,7 +23,6 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class MainActivity extends AppCompatActivity {
 
     private NavController navController;
-    private BottomNavigationView bottomNavigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,21 +40,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupNavigation() {
-        navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-        bottomNavigationView = findViewById(R.id.bottom_navigation);
-
-        AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.dashboardFragment,
-                R.id.transactionsFragment,
-                R.id.aiAssistantFragment
-        ).build();
-
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-        NavigationUI.setupWithNavController(bottomNavigationView, navController);
+        // More robust way to find NavController in onCreate when using FragmentContainerView
+        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.nav_host_fragment);
+        
+        if (navHostFragment != null) {
+            navController = navHostFragment.getNavController();
+            BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+            NavigationUI.setupWithNavController(bottomNavigationView, navController);
+        }
     }
 
     @Override
     public boolean onSupportNavigateUp() {
-        return navController.navigateUp() || super.onSupportNavigateUp();
+        return (navController != null && navController.navigateUp()) || super.onSupportNavigateUp();
     }
 }

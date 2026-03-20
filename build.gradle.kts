@@ -3,4 +3,5 @@ plugins {
     alias(libs.plugins.android.application) apply false
     // Hilt plugin is applied in the app module
     alias(libs.plugins.hilt.android.plugin) apply false
+    id("com.google.gms.google-services") version "4.4.4" apply false
 }

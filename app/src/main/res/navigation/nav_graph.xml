@@ -9,18 +9,40 @@
         android:id="@+id/dashboardFragment"
         android:name="sevak.hovhannisyan.myproject.ui.fragments.DashboardFragment"
         android:label="@string/nav_dashboard"
-        tools:layout="@layout/fragment_dashboard" />
+        tools:layout="@layout/fragment_dashboard">
+
+        <action
+            android:id="@+id/action_dashboardFragment_to_settingsFragment"
+            app:destination="@id/settingsFragment" />
+
+        <action
+            android:id="@+id/action_dashboardFragment_to_marketFragment"
+            app:destination="@id/marketFragment" />
+
+    </fragment>
 
     <fragment
-        android:id="@+id/transactionsFragment"
-        android:name="sevak.hovhannisyan.myproject.ui.fragments.TransactionsFragment"
-        android:label="@string/nav_transactions"
-        tools:layout="@layout/fragment_transactions" />
+        android:id="@+id/profileFragment"
+        android:name="sevak.hovhannisyan.myproject.ui.fragments.ProfileFragment"
+        android:label="@string/nav_profile"
+        tools:layout="@layout/fragment_profile" />
 
     <fragment
         android:id="@+id/aiAssistantFragment"
         android:name="sevak.hovhannisyan.myproject.ui.fragments.AiAssistantFragment"
         android:label="@string/nav_ai_assistant"
         tools:layout="@layout/fragment_ai_assistant" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="sevak.hovhannisyan.myproject.ui.fragments.SettingsFragment"
+        android:label="@string/settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/marketFragment"
+        android:name="sevak.hovhannisyan.myproject.ui.fragments.MarketFragment"
+        android:label="Market"
+        tools:layout="@layout/fragment_market" />
 
 </navigation>

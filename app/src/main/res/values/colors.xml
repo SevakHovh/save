@@ -3,33 +3,29 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Light theme: white + bright yellow -->
-    <color name="primary">#FFC107</color> <!-- bright yellow -->
-    <color name="on_primary">#1C1B1F</color>
-    <color name="primary_container">#FFF3CD</color>
-    <color name="on_primary_container">#332600</color>
+    <!-- Emerald and Gold Theme -->
+    <color name="primary">#D4AF37</color> <!-- Gold -->
+    <color name="on_primary">#000000</color>
+    <color name="primary_container">#EFEBE0</color> <!-- Beige -->
+    <color name="on_primary_container">#063b2a</color>
+    <color name="secondary_container">#EFEBE0</color>
+    <color name="on_secondary_container">#063b2a</color>
 
-    <color name="secondary">#FFECB3</color>
-    <color name="on_secondary">#1C1B1F</color>
-    <color name="secondary_container">#FFF8E1</color>
-    <color name="on_secondary_container">#332600</color>
+    <color name="secondary">#C5A059</color> <!-- Bronze/Gold -->
+    <color name="on_secondary">#FFFFFF</color>
 
-    <color name="tertiary">#FFCC80</color>
-    <color name="on_tertiary">#1C1B1F</color>
+    <color name="background">#063b2a</color> <!-- Dark Forest Green -->
+    <color name="on_background">#EFEBE0</color>
 
-    <color name="error">#BA1A1A</color>
+    <color name="surface">#EFEBE0</color> <!-- Beige/Fabric color -->
+    <color name="on_surface">#063b2a</color>
+
+    <color name="error">#C62828</color>
     <color name="on_error">#FFFFFF</color>
 
-    <color name="background">#FFFFFFFF</color>
-    <color name="on_background">#1C1B1F</color>
-
-    <color name="surface">#FFFFFFFF</color>
-    <color name="on_surface">#1C1B1F</color>
-
     <!-- Financial Colors -->
-    <color name="income_green">#4CAF50</color>
-    <color name="expense_red">#F44336</color>
+    <color name="income_green">#2E7D32</color>
+    <color name="expense_red">#C62828</color>
 
-    <!-- Accent for lime style settings button -->
-    <color name="settings_lime">#C6FF00</color>
+    <color name="settings_lime">#D4E157</color>
 </resources>

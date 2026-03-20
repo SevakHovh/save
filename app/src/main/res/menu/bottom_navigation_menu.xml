@@ -6,12 +6,12 @@
         android:title="@string/nav_dashboard" />
     
     <item
-        android:id="@+id/transactionsFragment"
-        android:icon="@android:drawable/ic_menu_agenda"
-        android:title="@string/nav_transactions" />
-    
-    <item
         android:id="@+id/aiAssistantFragment"
         android:icon="@android:drawable/ic_menu_help"
         android:title="@string/nav_ai_assistant" />
+
+    <item
+        android:id="@+id/profileFragment"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:title="@string/nav_profile" />
 </menu>

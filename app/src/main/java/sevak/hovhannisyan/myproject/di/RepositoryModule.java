@@ -1,17 +1,21 @@
 package sevak.hovhannisyan.myproject.di;
 
+import javax.inject.Singleton;
+
 import dagger.Module;
+import dagger.Provides;
 import dagger.hilt.InstallIn;
 import dagger.hilt.components.SingletonComponent;
+import sevak.hovhannisyan.myproject.data.dao.TransactionDao;
+import sevak.hovhannisyan.myproject.data.repository.TransactionRepository;
 
-/**
- * Dagger Hilt module for providing repository dependencies.
- * Note: TransactionRepository is now using constructor injection,
- * so this module is kept for future repository additions if needed.
- */
 @Module
 @InstallIn(SingletonComponent.class)
 public class RepositoryModule {
-    // TransactionRepository is now injected via constructor
-    // This module can be used for other repository dependencies if needed
+
+    @Provides
+    @Singleton
+    public TransactionRepository provideTransactionRepository(TransactionDao transactionDao) {
+        return new TransactionRepository(transactionDao);
+    }
 }
