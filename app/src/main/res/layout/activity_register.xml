@@ -9,77 +9,176 @@
     android:background="@color/background">
 
     <TextView
+        android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Create Account"
-        android:textSize="28sp"
+        android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="@color/on_background"
-        android:layout_marginBottom="32dp"/>
+        android:textColor="@color/primary"
+        android:layout_marginBottom="40dp"/>
 
-    <com.google.android.material.textfield.TextInputLayout
+    <!-- Step 1: Registration Details -->
+    <LinearLayout
+        android:id="@+id/ll_details"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp">
+        android:orientation="vertical"
+        android:visibility="visible">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/et_email"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_email"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Email"
-            android:inputType="textEmailAddress"
-            android:textColor="@color/on_surface" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginBottom="16dp"
+            app:errorEnabled="true"
+            app:boxStrokeColor="@color/primary"
+            app:boxStrokeWidth="2dp"
+            app:boxBackgroundColor="@color/surface"
+            app:hintTextColor="@color/primary"
+            android:textColorHint="@color/primary">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        app:passwordToggleEnabled="true">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Email Address"
+                android:inputType="textEmailAddress"
+                android:textColor="@color/on_surface"
+                android:padding="16dp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/et_password"
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Password"
-            android:inputType="textPassword"
-            android:textColor="@color/on_surface" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginBottom="16dp"
+            app:passwordToggleEnabled="true"
+            app:passwordToggleTint="@color/primary"
+            app:boxStrokeColor="@color/primary"
+            app:boxStrokeWidth="2dp"
+            app:boxBackgroundColor="@color/surface"
+            app:hintTextColor="@color/primary"
+            android:textColorHint="@color/primary">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:passwordToggleEnabled="true">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Password"
+                android:inputType="textPassword"
+                android:textColor="@color/on_surface"
+                android:padding="16dp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/et_confirm_password"
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Confirm Password"
-            android:inputType="textPassword"
-            android:textColor="@color/on_surface" />
-    </com.google.android.material.textfield.TextInputLayout>
+            app:passwordToggleEnabled="true"
+            app:passwordToggleTint="@color/primary"
+            app:boxStrokeColor="@color/primary"
+            app:boxStrokeWidth="2dp"
+            app:boxBackgroundColor="@color/surface"
+            app:hintTextColor="@color/primary"
+            android:textColorHint="@color/primary">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_register"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_confirm_password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Confirm Password"
+                android:inputType="textPassword"
+                android:textColor="@color/on_surface"
+                android:padding="16dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_register"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="Register"
+            android:textSize="16sp"
+            android:padding="16dp"
+            app:cornerRadius="28dp"
+            android:backgroundTint="@color/primary"
+            android:textColor="@color/on_primary"/>
+    </LinearLayout>
+
+    <!-- Step 2: Verification Status -->
+    <LinearLayout
+        android:id="@+id/ll_verification"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="Register"
-        android:padding="12dp"/>
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:src="@android:drawable/ic_dialog_email"
+            app:tint="@color/primary"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Verify Your Email"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary"
+            android:layout_gravity="center"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="We've sent a verification link to your email. Please click the link to activate your account."
+            android:textColor="@color/on_background"
+            android:gravity="center"
+            android:layout_gravity="center"
+            android:layout_marginBottom="24dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_check_verification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="I have verified"
+            android:padding="16dp"
+            app:cornerRadius="28dp"
+            android:backgroundTint="@color/primary"
+            android:textColor="@color/on_primary"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_resend_email"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Resend Link"
+            android:textColor="@color/primary"
+            android:layout_marginTop="8dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_back_to_register"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Back to Register"
+            android:textColor="@color/on_background"/>
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tv_login_prompt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="32dp"
         android:text="Already have an account? Login"
         android:textColor="@color/primary"
         android:clickable="true"
         android:focusable="true"
-        android:minHeight="48dp"
-        android:gravity="center"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp" />
+        android:padding="8dp" />
 
 </LinearLayout>

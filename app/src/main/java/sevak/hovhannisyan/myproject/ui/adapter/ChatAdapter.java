@@ -27,6 +27,14 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
         notifyItemInserted(messages.size() - 1);
     }
 
+    public void removeLastMessage() {
+        if (!messages.isEmpty()) {
+            int position = messages.size() - 1;
+            messages.remove(position);
+            notifyItemRemoved(position);
+        }
+    }
+
     @NonNull
     @Override
     public ChatViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

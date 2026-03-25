@@ -10,7 +10,7 @@ import sevak.hovhannisyan.myproject.data.converter.DateConverter;
 
 /**
  * Transaction entity representing a financial transaction in the database.
- * Supports both income and expense types.
+ * Supports both income and expense types and is associated with a specific user.
  */
 @Entity(tableName = "transactions")
 @TypeConverters(DateConverter.class)
@@ -18,6 +18,8 @@ public class Transaction {
     
     @PrimaryKey(autoGenerate = true)
     private long id;
+    
+    private String userId; // Added to associate transaction with a user
     
     private double amount;
     
@@ -33,7 +35,8 @@ public class Transaction {
     public Transaction() {
     }
     
-    public Transaction(double amount, String category, Date date, @TransactionType String type, String description) {
+    public Transaction(String userId, double amount, String category, Date date, @TransactionType String type, String description) {
+        this.userId = userId;
         this.amount = amount;
         this.category = category;
         this.date = date;
@@ -48,6 +51,14 @@ public class Transaction {
     
     public void setId(long id) {
         this.id = id;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
     
     public double getAmount() {

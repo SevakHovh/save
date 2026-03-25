@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    android:padding="16dp"
+    android:padding="12dp"
     tools:context=".ui.fragments.AiAssistantFragment">
 
     <androidx.recyclerview.widget.RecyclerView
@@ -13,66 +13,79 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        app:layout_constraintBottom_toTopOf="@+id/ll_input_container"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/ll_input_area"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:listitem="@layout/item_chat_message" />
 
     <LinearLayout
-        android:id="@+id/ll_input_container"
+        android:id="@+id/ll_input_area"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingTop="8dp"
+        android:orientation="vertical"
+        android:paddingTop="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
+        <LinearLayout
+            android:id="@+id/ll_input_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                app:boxBackgroundMode="outline"
+                app:boxCornerRadiusBottomEnd="28dp"
+                app:boxCornerRadiusBottomStart="28dp"
+                app:boxCornerRadiusTopEnd="28dp"
+                app:boxCornerRadiusTopStart="28dp"
+                app:hintEnabled="false"
+                app:boxStrokeColor="@color/primary"
+                app:boxStrokeWidth="1dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_user_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Talk to SAVE Intelligence..."
+                    android:inputType="textMultiLine"
+                    android:maxLines="4"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:minLines="1"
+                    android:textColor="@color/on_background"
+                    android:textColorHint="@color/on_background" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_send"
+                android:layout_width="wrap_content"
+                android:layout_height="56dp"
+                android:minWidth="100dp"
+                android:text="Send"
+                app:cornerRadius="28dp"
+                app:icon="@android:drawable/ic_menu_send"
+                app:iconPadding="4dp" />
+        </LinearLayout>
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_ai_mode"
             style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
-            android:layout_height="56dp"
-            android:layout_marginEnd="8dp"
-            android:text="Regular"
-            app:cornerRadius="24dp"
-            app:icon="@android:drawable/ic_menu_info_details" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            app:boxBackgroundMode="outline"
-            app:boxCornerRadiusBottomEnd="24dp"
-            app:boxCornerRadiusBottomStart="24dp"
-            app:boxCornerRadiusTopEnd="24dp"
-            app:boxCornerRadiusTopStart="24dp"
-            app:hintEnabled="false"
-            app:boxStrokeColor="@color/primary"
-            app:hintTextColor="@color/primary">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/et_user_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/ai_placeholder"
-                android:inputType="textMultiLine"
-                android:maxLines="3"
-                android:minLines="1"
-                android:textColor="@color/on_background"
-                android:textColorHint="@color/on_background" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_send"
-            android:layout_width="wrap_content"
-            android:layout_height="56dp"
-            android:text="@string/send"
-            app:cornerRadius="24dp"
-            app:icon="@android:drawable/ic_menu_send"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"
+            android:text="Switch to Intelligence Mode"
+            app:cornerRadius="16dp"
+            app:icon="@android:drawable/ic_menu_info_details"
             app:iconGravity="textStart" />
     </LinearLayout>
 

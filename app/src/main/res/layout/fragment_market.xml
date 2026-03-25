@@ -36,52 +36,30 @@
     </LinearLayout>
 
     <!-- Category Selector -->
-    <HorizontalScrollView
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chip_group_market"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:scrollbars="none">
+        app:singleSelection="true"
+        app:selectionRequired="true">
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chip_group_market"
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_stocks"
+            style="@style/Widget.Material3.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:singleSelection="true"
-            app:selectionRequired="true">
+            android:text="Stocks"
+            android:checked="true" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_stocks"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Stocks"
-                android:checked="true"
-                app:chipBackgroundColor="@color/primary_container"
-                app:chipStrokeColor="@color/primary" />
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_crypto"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Crypto" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_crypto"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Crypto" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_indices"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Indices" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_forex"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Forex" />
-
-        </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
+    </com.google.android.material.chip.ChipGroup>
 
     <FrameLayout
         android:layout_width="match_parent"

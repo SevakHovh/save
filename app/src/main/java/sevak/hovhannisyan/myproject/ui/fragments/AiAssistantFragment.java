@@ -1,9 +1,13 @@
 package sevak.hovhannisyan.myproject.ui.fragments;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,29 +26,53 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
-import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import org.json.JSONObject;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import sevak.hovhannisyan.myproject.R;
+import sevak.hovhannisyan.myproject.api.OpenRouterRequest;
+import sevak.hovhannisyan.myproject.api.OpenRouterResponse;
+import sevak.hovhannisyan.myproject.api.OpenRouterService;
 import sevak.hovhannisyan.myproject.data.model.ChatMessage;
 import sevak.hovhannisyan.myproject.data.model.Transaction;
-import sevak.hovhannisyan.myproject.ui.GoalManager;
 import sevak.hovhannisyan.myproject.ui.adapter.ChatAdapter;
 import sevak.hovhannisyan.myproject.ui.viewmodel.MainViewModel;
 
 @AndroidEntryPoint
 public class AiAssistantFragment extends Fragment {
 
+    private static final String TAG = "AiAssistantFragment";
+    
+    // CURRENT API KEY
+    private static final String OPENROUTER_API_KEY = "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";
+    
+    // ACTIVE MODEL - Change this to a ':free' model if you don't have credits
+    private static final String CLAUDE_MODEL = "anthropic/claude-3.5-sonnet"; 
+    private static final String FREE_FALLBACK = "google/gemini-flash-1.5-8b"; // Very fast and usually cheaper/free
+    private static final String VISION_MODEL = "qwen/qwen-2-vl-72b-instruct";
+
     private enum AiMode {
         REGULAR, BILL_DETECTOR
     }
+
+    @Inject
+    OpenRouterService openRouterService;
 
     private MainViewModel viewModel;
     private RecyclerView rvChatMessages;
@@ -55,22 +83,19 @@ public class AiAssistantFragment extends Fragment {
     private NumberFormat currencyFormat;
     private AiMode currentMode = AiMode.REGULAR;
 
-    // Track state for detected bill to allow "add it" command
     private double lastDetectedPrice = 0.0;
-    private String lastDetectedCategory = "Other";
-
-    @Inject
-    GoalManager goalManager;
+    private String lastDetectedCategory = "Unknown";
 
     private Double currentBalance = 0.0;
     private Double currentIncome = 0.0;
     private Double currentExpense = 0.0;
+    private Map<String, Object> userData;
 
     private final ActivityResultLauncher<String> getContent = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             uri -> {
                 if (uri != null) {
-                    processBillImage(uri);
+                    processBillWithQwen(uri);
                 }
             }
     );
@@ -97,8 +122,7 @@ public class AiAssistantFragment extends Fragment {
         rvChatMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvChatMessages.setAdapter(chatAdapter);
 
-        // Add welcome message
-        chatAdapter.addMessage(new ChatMessage("Hello! I'm your SAVE AI assistant. How can I help you today?", false));
+        chatAdapter.addMessage(new ChatMessage("SAVE AI Online. Intelligence Mode active.", false));
 
         observeData();
         setupButtons();
@@ -107,10 +131,10 @@ public class AiAssistantFragment extends Fragment {
     private void setupButtons() {
         btnAiMode.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(requireContext(), btnAiMode);
-            popup.getMenu().add("Regular");
-            popup.getMenu().add("Bill Detector");
+            popup.getMenu().add("Intelligence Mode");
+            popup.getMenu().add("Receipt Scanner");
             popup.setOnMenuItemClickListener(item -> {
-                if (item.getTitle().equals("Regular")) {
+                if (item.getTitle().equals("Intelligence Mode")) {
                     setAiMode(AiMode.REGULAR);
                 } else {
                     setAiMode(AiMode.BILL_DETECTOR);
@@ -122,7 +146,7 @@ public class AiAssistantFragment extends Fragment {
 
         btnSend.setOnClickListener(v -> {
             if (currentMode == AiMode.REGULAR) {
-                handleRegularSend();
+                handleAiIntelligence();
             } else {
                 getContent.launch("image/*");
             }
@@ -132,145 +156,171 @@ public class AiAssistantFragment extends Fragment {
     private void setAiMode(AiMode mode) {
         currentMode = mode;
         if (mode == AiMode.REGULAR) {
-            btnAiMode.setText("Regular");
+            btnAiMode.setText("Intelligence");
             btnAiMode.setIconResource(android.R.drawable.ic_menu_info_details);
             etUserInput.setVisibility(View.VISIBLE);
-            btnSend.setText("Send");
-            btnSend.setIconResource(android.R.drawable.ic_menu_send);
+            btnSend.setText("Ask AI");
         } else {
-            btnAiMode.setText("Bill Det.");
+            btnAiMode.setText("Scanner");
             btnAiMode.setIconResource(android.R.drawable.ic_menu_camera);
             etUserInput.setVisibility(View.GONE);
-            btnSend.setText("Pick Bill");
-            btnSend.setIconResource(android.R.drawable.ic_menu_gallery);
+            btnSend.setText("Scan Bill");
         }
     }
 
-    private void handleRegularSend() {
-        String question = etUserInput.getText().toString().trim();
-        if (!question.isEmpty()) {
-            chatAdapter.addMessage(new ChatMessage(question, true));
-            etUserInput.setText("");
-            rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
-            
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                String answer = generateAiResponse(question.toLowerCase());
-                chatAdapter.addMessage(new ChatMessage(answer, false));
-                rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
-            }, 1000);
-        }
-    }
+    private void handleAiIntelligence() {
+        String userInput = etUserInput.getText().toString().trim();
+        if (userInput.isEmpty()) return;
 
-    private void processBillImage(Uri uri) {
-        chatAdapter.addMessage(new ChatMessage("Analyzing bill image...", true));
+        chatAdapter.addMessage(new ChatMessage(userInput, true));
+        etUserInput.setText("");
+        
+        // Smart Save Detection
+        if ((userInput.toLowerCase().contains("save it") || userInput.toLowerCase().contains("add it")) && lastDetectedPrice > 0) {
+            saveDetectedBill();
+            return;
+        }
+
+        chatAdapter.addMessage(new ChatMessage("Synchronizing with Neural Core...", false));
         rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
 
-        // OCR Simulation using the provided API context
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            // Generate a random realistic price between $5 and $150
-            Random r = new Random();
-            lastDetectedPrice = 5.0 + (145.0 * r.nextDouble());
-            
-            String[] categories = {"Grocery", "Dining", "Shopping", "Transport", "Utilities"};
-            lastDetectedCategory = categories[r.nextInt(categories.length)];
+        runMainBrain(userInput, CLAUDE_MODEL);
+    }
 
-            String formattedPrice = currencyFormat.format(lastDetectedPrice);
-            String result = "Bill Analysis Complete:\n" +
-                    "Detected Amount: " + formattedPrice + "\n" +
-                    "Estimated Category: " + lastDetectedCategory + "\n\n" +
-                    "I've saved these details. Switch to 'Regular' mode and say 'add it' to save this expense!";
-            
-            chatAdapter.addMessage(new ChatMessage(result, false));
+    private void saveDetectedBill() {
+        Transaction t = new Transaction();
+        t.setAmount(lastDetectedPrice);
+        t.setCategory(lastDetectedCategory);
+        t.setType("EXPENSE");
+        t.setDate(new Date());
+        t.setDescription("SAVE AI Scan (" + lastDetectedCategory + ")");
+        viewModel.insertTransaction(t);
+        
+        lastDetectedPrice = 0.0;
+        chatAdapter.addMessage(new ChatMessage("Neural Data Synchronized. Transaction logged.", false));
+        rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
+    }
+
+    private void runMainBrain(String userInput, String modelId) {
+        String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
+        String context = String.format(Locale.US, "CONTEXT: [Date: %s] [Bal: %.2f] [Inc: %.2f] [Exp: %.2f]", 
+                dateStr, currentBalance, currentIncome, currentExpense);
+        
+        String prompt = "Professional Financial Assistant. Context: " + context + ". User Input: " + userInput;
+
+        OpenRouterRequest request = new OpenRouterRequest(modelId, 
+                Collections.singletonList(new OpenRouterRequest.Message("user", prompt)));
+
+        openRouterService.analyzeBill("Bearer " + OPENROUTER_API_KEY, "https://saveapp.ai", "SAVE AI", request)
+            .enqueue(new Callback<OpenRouterResponse>() {
+                @Override
+                public void onResponse(Call<OpenRouterResponse> call, Response<OpenRouterResponse> response) {
+                    if (response.isSuccessful() && response.body() != null && !response.body().getChoices().isEmpty()) {
+                        displayFinalAnswer(response.body().getChoices().get(0).getMessage().getContent());
+                    } else if (response.code() == 402 && !modelId.equals(FREE_FALLBACK)) {
+                        // If 402 on Claude, try to fallback to a free/cheaper model automatically
+                        runMainBrain(userInput, FREE_FALLBACK);
+                    } else {
+                        handleErrorResponse(response);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<OpenRouterResponse> call, Throwable t) {
+                    handleError("Strategic core link failed.");
+                }
+            });
+    }
+
+    private void handleErrorResponse(Response<?> response) {
+        String msg = "System Alert: Code " + response.code();
+        if (response.code() == 402) msg = "Neural Credits Depleted. Please top up your OpenRouter account to use Claude.";
+        handleError(msg);
+    }
+
+    private void displayFinalAnswer(String answer) {
+        if (getActivity() == null) return;
+        getActivity().runOnUiThread(() -> {
+            if (chatAdapter.getItemCount() > 0) chatAdapter.removeLastMessage();
+            chatAdapter.addMessage(new ChatMessage(answer, false));
             rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
-        }, 2000);
+        });
+    }
+
+    private void handleError(String msg) {
+        if (getActivity() == null) return;
+        getActivity().runOnUiThread(() -> {
+            if (chatAdapter.getItemCount() > 0) chatAdapter.removeLastMessage();
+            chatAdapter.addMessage(new ChatMessage(msg, false));
+            rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
+        });
+    }
+
+    private void processBillWithQwen(Uri uri) {
+        chatAdapter.addMessage(new ChatMessage("Neural Scanning Active...", false));
+        try {
+            InputStream is = requireContext().getContentResolver().openInputStream(uri);
+            Bitmap bitmap = BitmapFactory.decodeStream(is);
+            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 800, (int)(800.0 * bitmap.getHeight() / bitmap.getWidth()), true);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos);
+            String base64Image = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
+
+            List<OpenRouterRequest.Content> contents = new ArrayList<>();
+            contents.add(OpenRouterRequest.Content.text("Return JSON ONLY: {\"total\":0.0,\"category\":\"\"}"));
+            contents.add(OpenRouterRequest.Content.image(base64Image));
+
+            OpenRouterRequest request = new OpenRouterRequest(VISION_MODEL, 
+                Collections.singletonList(new OpenRouterRequest.Message("user", contents)));
+
+            openRouterService.analyzeBill("Bearer " + OPENROUTER_API_KEY, "https://saveapp.ai", "SAVE AI", request)
+                .enqueue(new Callback<OpenRouterResponse>() {
+                    @Override
+                    public void onResponse(Call<OpenRouterResponse> call, Response<OpenRouterResponse> response) {
+                        if (getActivity() == null) return;
+                        getActivity().runOnUiThread(() -> {
+                            if (chatAdapter.getItemCount() > 0) chatAdapter.removeLastMessage();
+                            if (response.isSuccessful() && response.body() != null && !response.body().getChoices().isEmpty()) {
+                                parseAiJsonResponse(response.body().getChoices().get(0).getMessage().getContent());
+                            } else {
+                                handleErrorResponse(response);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(Call<OpenRouterResponse> call, Throwable t) {
+                        if (getActivity() == null) return;
+                        getActivity().runOnUiThread(() -> {
+                            if (chatAdapter.getItemCount() > 0) chatAdapter.removeLastMessage();
+                            chatAdapter.addMessage(new ChatMessage("Visual link failure.", false));
+                        });
+                    }
+                });
+        } catch (Exception e) {
+            chatAdapter.addMessage(new ChatMessage("Scanner initialization error.", false));
+        }
+    }
+
+    private void parseAiJsonResponse(String content) {
+        try {
+            String jsonPart = content;
+            if (content.contains("{") && content.contains("}")) {
+                jsonPart = content.substring(content.indexOf("{"), content.lastIndexOf("}") + 1);
+            }
+            JSONObject json = new JSONObject(jsonPart);
+            lastDetectedPrice = json.optDouble("total", 0.0);
+            lastDetectedCategory = json.optString("category", "Unknown");
+            chatAdapter.addMessage(new ChatMessage("Neural Scan Verified:\nAmount: " + currencyFormat.format(lastDetectedPrice) + "\nCategory: " + lastDetectedCategory + "\n\nSay 'save it' to log this.", false));
+        } catch (Exception e) {
+            chatAdapter.addMessage(new ChatMessage("Neural extraction failed.", false));
+        }
     }
 
     private void observeData() {
         viewModel.getBalance().observe(getViewLifecycleOwner(), balance -> currentBalance = balance != null ? balance : 0.0);
         viewModel.getTotalIncome().observe(getViewLifecycleOwner(), income -> currentIncome = income != null ? income : 0.0);
         viewModel.getTotalExpense().observe(getViewLifecycleOwner(), expense -> currentExpense = expense != null ? expense : 0.0);
-    }
-
-    private String generateAiResponse(String input) {
-        // Handle "add it" command for bill detector
-        if ((input.contains("add it") || input.contains("save this") || input.contains("add expense")) && lastDetectedPrice > 0) {
-            Transaction transaction = new Transaction();
-            transaction.setAmount(lastDetectedPrice);
-            transaction.setCategory(lastDetectedCategory);
-            transaction.setType("EXPENSE");
-            transaction.setDate(new Date());
-            transaction.setDescription("Bill Detector Scan");
-            
-            viewModel.insertTransaction(transaction);
-            
-            double price = lastDetectedPrice;
-            lastDetectedPrice = 0; // Reset
-            return "Done! I've added " + currencyFormat.format(price) + " to your expenses under " + lastDetectedCategory + ". Your balance has been updated.";
-        }
-
-        double salary = goalManager.getSalary();
-        double fixedExpenses = goalManager.getFixedExpenses();
-        double goal = goalManager.getGoalAmount();
-
-        if (input.contains("advice") || input.contains("analyze") || input.contains("conclude") || input.contains("help") || input.contains("status")) {
-            if (salary <= 0) {
-                return "I'd love to give you financial advice, but I don't know your salary yet! Please go to your Profile and enter your monthly income.";
-            }
-
-            StringBuilder advice = new StringBuilder();
-            double disposableIncome = salary - fixedExpenses;
-            double actualSavings = currentIncome - currentExpense;
-
-            advice.append("Analysis: Your monthly disposable income is ").append(currencyFormat.format(disposableIncome)).append(". ");
-
-            if (actualSavings < 0) {
-                advice.append("Warning: You are currently overspending by ").append(currencyFormat.format(Math.abs(actualSavings))).append(" this month. ");
-                advice.append("Tip: Focus on cutting discretionary spending like ").append(lastDetectedCategory.toLowerCase()).append(" to balance your budget.");
-            } else {
-                double savingsRate = (actualSavings / salary) * 100;
-                advice.append("Status: You have saved ").append(currencyFormat.format(actualSavings)).append(" (").append(String.format("%.1f", savingsRate)).append("% of income). ");
-                
-                if (savingsRate < 20) {
-                    advice.append("Recommendation: Try to reach a 20% savings rate (").append(currencyFormat.format(salary * 0.20)).append("). ");
-                } else {
-                    advice.append("Excellent: You are exceeding typical saving recommendations! ");
-                }
-            }
-
-            if (goal > 0) {
-                double remainingGoal = goal - currentBalance;
-                if (remainingGoal > 0) {
-                    if (actualSavings > 0) {
-                        int months = (int) Math.ceil(remainingGoal / actualSavings);
-                        advice.append("\n\nGoal Tracking: You are ").append(currencyFormat.format(remainingGoal)).append(" away from your goal. At this rate, you will reach it in ").append(months).append(" months.");
-                    } else {
-                        advice.append("\n\nGoal Tracking: You need positive monthly savings to reach your ").append(currencyFormat.format(goal)).append(" goal.");
-                    }
-                } else {
-                    advice.append("\n\nGoal Tracking: Goal reached! Consider setting a new milestone.");
-                }
-            }
-
-            return advice.toString();
-        }
-
-        // Expanded natural language triggers
-        if (input.contains("balance") || input.contains("how much money")) {
-            return "Your current balance is " + currencyFormat.format(currentBalance) + ". " + 
-                   (currentBalance < 100 ? "It's looking a bit low, be careful!" : "You're in good standing.");
-        } else if (input.contains("income") || input.contains("earn")) {
-            return "Total income recorded: " + currencyFormat.format(currentIncome) + ". This includes your salary and other deposits.";
-        } else if (input.contains("expense") || input.contains("spent") || input.contains("spending")) {
-            return "You've spent " + currencyFormat.format(currentExpense) + " so far. " + 
-                   (currentExpense > currentIncome ? "This is more than you've earned!" : "You're staying within your means.");
-        } else if (input.contains("hello") || input.contains("hi") || input.contains("hey")) {
-            return "Hello! I'm your financial AI. I can analyze your spending, help you reach your goals, or even process bills if you switch modes. What's on your mind?";
-        } else if (input.contains("save") || input.contains("budget")) {
-            return "Budgeting tip: Follow the 50/30/20 rule—50% for needs, 30% for wants, and 20% for savings. I can calculate these for you if you ask for 'advice'!";
-        } else if (input.contains("thank")) {
-            return "You're welcome! I'm here to help you reach your financial goals. Anything else?";
-        } else {
-            return "I'm not quite sure about that. Try asking for 'financial advice', your 'balance', or 'expenses'. You can also use the Bill Detector to scan receipts!";
-        }
+        viewModel.getUserData().observe(getViewLifecycleOwner(), data -> userData = data);
     }
 }

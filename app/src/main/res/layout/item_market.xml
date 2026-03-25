@@ -59,6 +59,7 @@
         </LinearLayout>
 
         <View
+            android:id="@+id/market_divider"
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginVertical="12dp"
@@ -66,6 +67,7 @@
 
         <!-- Detail Grid -->
         <GridLayout
+            android:id="@+id/gridLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:alignmentMode="alignMargins"

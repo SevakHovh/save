@@ -1,35 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-
-    <!-- Golden Theme Palette (Dark) -->
-    <color name="primary">#FFC107</color> <!-- Amber 500 -->
+    <!-- Modern Dark Mode: Deep Slate & Cyan Accents -->
+    <color name="primary">#00E5FF</color> <!-- Vibrant Cyan -->
     <color name="on_primary">#000000</color>
-    <color name="primary_container">#453300</color>
-    <color name="on_primary_container">#FFE082</color>
+    <color name="primary_container">#006064</color>
+    <color name="on_primary_container">#B2EBF2</color>
 
-    <color name="secondary">#FFA000</color>
-    <color name="on_secondary">#000000</color>
-    <color name="secondary_container">#382400</color>
-    <color name="on_secondary_container">#FFECB3</color>
+    <color name="secondary">#7C4DFF</color> <!-- Deep Purple -->
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="secondary_container">#311B92</color>
+    <color name="on_secondary_container">#D1C4E9</color>
 
-    <color name="tertiary">#FFB300</color>
-    <color name="on_tertiary">#000000</color>
+    <color name="background">#0F172A</color> <!-- Deep Slate Blue -->
+    <color name="on_background">#F8FAFC</color>
 
-    <color name="error">#CF6679</color>
+    <color name="surface">#1E293B</color> <!-- Slate -->
+    <color name="on_surface">#F1F5F9</color>
+    <color name="surface_variant">#334155</color>
+    <color name="on_surface_variant">#94A3B8</color>
+
+    <color name="outline">#475569</color>
+
+    <color name="error">#FB7185</color>
     <color name="on_error">#000000</color>
 
-    <color name="background">#121212</color>
-    <color name="on_background">#FFFFFF</color>
-
-    <color name="surface">#1E1E1E</color>
-    <color name="on_surface">#FFFFFF</color>
-
-    <!-- Financial Colors -->
-    <color name="income_green">#81C784</color>
-    <color name="expense_red">#E57373</color>
-
-    <!-- Accent for settings button -->
-    <color name="settings_lime">#AEEA00</color>
+    <!-- Financial Colors (Dark) -->
+    <color name="income_green">#4ADE80</color>
+    <color name="expense_red">#FB7185</color>
+    
+    <color name="glass_white">#0AFFFFFF</color>
 </resources>

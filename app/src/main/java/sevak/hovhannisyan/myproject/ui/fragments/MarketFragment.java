@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,7 +25,7 @@ import java.util.List;
 
 import dagger.hilt.android.AndroidEntryPoint;
 import sevak.hovhannisyan.myproject.R;
-import sevak.hovhannisyan.myproject.api.StockResponse;
+import sevak.hovhannisyan.myproject.api.FinnhubResponse;
 import sevak.hovhannisyan.myproject.ui.viewmodel.MainViewModel;
 
 @AndroidEntryPoint
@@ -53,7 +54,9 @@ public class MarketFragment extends Fragment {
         btnBack = view.findViewById(R.id.btn_back);
         chipGroup = view.findViewById(R.id.chip_group_market);
 
-        btnBack.setOnClickListener(v -> Navigation.findNavController(v).navigateUp());
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v -> Navigation.findNavController(v).navigateUp());
+        }
 
         rvMarket.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new MarketAdapter();
@@ -67,6 +70,7 @@ public class MarketFragment extends Fragment {
     }
 
     private void setupChips() {
+        if (chipGroup == null) return;
         chipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (checkedIds.isEmpty()) return;
             int id = checkedIds.get(0);
@@ -74,10 +78,6 @@ public class MarketFragment extends Fragment {
                 viewModel.fetchStocks();
             } else if (id == R.id.chip_crypto) {
                 viewModel.fetchCrypto();
-            } else if (id == R.id.chip_indices) {
-                viewModel.fetchIndices();
-            } else if (id == R.id.chip_forex) {
-                viewModel.fetchForex();
             }
         });
     }
@@ -90,15 +90,21 @@ public class MarketFragment extends Fragment {
         });
 
         viewModel.getIsMarketLoading().observe(getViewLifecycleOwner(), isLoading -> {
-            progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+            if (progressBar != null) progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
             rvMarket.setAlpha(isLoading ? 0.5f : 1.0f);
+        });
+
+        viewModel.getMarketError().observe(getViewLifecycleOwner(), error -> {
+            if (error != null) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+            }
         });
     }
 
     private static class MarketAdapter extends RecyclerView.Adapter<MarketAdapter.ViewHolder> {
-        private List<StockResponse.GlobalQuote> quotes = new ArrayList<>();
+        private List<FinnhubResponse> quotes = new ArrayList<>();
 
-        void setQuotes(List<StockResponse.GlobalQuote> quotes) {
+        void setQuotes(List<FinnhubResponse> quotes) {
             this.quotes = quotes;
             notifyDataSetChanged();
         }
@@ -112,25 +118,86 @@ public class MarketFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            StockResponse.GlobalQuote quote = quotes.get(position);
-            holder.tvSymbol.setText(quote.getSymbol());
-            holder.tvPrice.setText("$" + (quote.getPrice() != null ? quote.getPrice() : "N/A"));
-            holder.tvChange.setText(quote.getChangePercent());
+            FinnhubResponse quote = quotes.get(position);
             
-            holder.tvOpen.setText(quote.getOpen());
-            holder.tvHigh.setText(quote.getHigh());
-            holder.tvLow.setText(quote.getLow());
-            holder.tvPrevClose.setText(quote.getPreviousClose());
-            holder.tvVolume.setText(quote.getVolume());
-            holder.tvChangeAbs.setText(quote.getChange());
+            if (holder.tvSymbol != null) holder.tvSymbol.setText(quote.getSymbol());
+            if (holder.tvPrice != null) holder.tvPrice.setText(String.format("$%.2f", quote.getCurrentPrice()));
+            if (holder.tvChange != null) holder.tvChange.setText(String.format("%.2f%%", quote.getPercentChange()));
+            
+            // Logic to show/hide details based on availability
+            boolean hasDetails = false;
 
-            String change = quote.getChangePercent();
-            if (change != null && change.startsWith("-")) {
-                holder.tvChange.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.expense_red));
-                holder.tvChangeAbs.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.expense_red));
+            if (quote.getOpenPrice() != 0) {
+                if (holder.tvOpen != null) {
+                    holder.tvOpen.setText(String.format("%.2f", quote.getOpenPrice()));
+                    ((View)holder.tvOpen.getParent()).setVisibility(View.VISIBLE);
+                }
+                hasDetails = true;
+            } else if (holder.tvOpen != null) {
+                ((View)holder.tvOpen.getParent()).setVisibility(View.GONE);
+            }
+
+            if (quote.getHighPrice() != 0) {
+                if (holder.tvHigh != null) {
+                    holder.tvHigh.setText(String.format("%.2f", quote.getHighPrice()));
+                    ((View)holder.tvHigh.getParent()).setVisibility(View.VISIBLE);
+                }
+                hasDetails = true;
+            } else if (holder.tvHigh != null) {
+                ((View)holder.tvHigh.getParent()).setVisibility(View.GONE);
+            }
+
+            if (quote.getLowPrice() != 0) {
+                if (holder.tvLow != null) {
+                    holder.tvLow.setText(String.format("%.2f", quote.getLowPrice()));
+                    ((View)holder.tvLow.getParent()).setVisibility(View.VISIBLE);
+                }
+                hasDetails = true;
+            } else if (holder.tvLow != null) {
+                ((View)holder.tvLow.getParent()).setVisibility(View.GONE);
+            }
+
+            if (quote.getPreviousClose() != 0) {
+                if (holder.tvPrevClose != null) {
+                    holder.tvPrevClose.setText(String.format("%.2f", quote.getPreviousClose()));
+                    ((View)holder.tvPrevClose.getParent()).setVisibility(View.VISIBLE);
+                }
+                hasDetails = true;
+            } else if (holder.tvPrevClose != null) {
+                ((View)holder.tvPrevClose.getParent()).setVisibility(View.GONE);
+            }
+
+            String volume = quote.getVolume();
+            if (volume != null && !volume.equals("-") && !volume.equals("0")) {
+                if (holder.tvVolume != null) {
+                    holder.tvVolume.setText(volume);
+                    ((View)holder.tvVolume.getParent()).setVisibility(View.VISIBLE);
+                }
+                hasDetails = true;
+            } else if (holder.tvVolume != null) {
+                ((View)holder.tvVolume.getParent()).setVisibility(View.GONE);
+            }
+
+            if (quote.getChange() != 0) {
+                if (holder.tvChangeAbs != null) {
+                    holder.tvChangeAbs.setText(String.format("%.2f", quote.getChange()));
+                    ((View)holder.tvChangeAbs.getParent()).setVisibility(View.VISIBLE);
+                }
+                hasDetails = true;
+            } else if (holder.tvChangeAbs != null) {
+                ((View)holder.tvChangeAbs.getParent()).setVisibility(View.GONE);
+            }
+
+            // Hide the entire detail section if no extra info is available
+            if (holder.divider != null) holder.divider.setVisibility(hasDetails ? View.VISIBLE : View.GONE);
+            if (holder.gridLayout != null) holder.gridLayout.setVisibility(hasDetails ? View.VISIBLE : View.GONE);
+
+            if (quote.getChange() < 0) {
+                if (holder.tvChange != null) holder.tvChange.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.expense_red));
+                if (holder.tvChangeAbs != null) holder.tvChangeAbs.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.expense_red));
             } else {
-                holder.tvChange.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.income_green));
-                holder.tvChangeAbs.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.income_green));
+                if (holder.tvChange != null) holder.tvChange.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.income_green));
+                if (holder.tvChangeAbs != null) holder.tvChangeAbs.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.income_green));
             }
         }
 
@@ -142,18 +209,23 @@ public class MarketFragment extends Fragment {
         static class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvSymbol, tvPrice, tvChange;
             TextView tvOpen, tvHigh, tvLow, tvPrevClose, tvVolume, tvChangeAbs;
+            View divider, gridLayout;
 
             ViewHolder(View itemView) {
                 super(itemView);
                 tvSymbol = itemView.findViewById(R.id.tv_symbol);
                 tvPrice = itemView.findViewById(R.id.tv_price);
                 tvChange = itemView.findViewById(R.id.tv_change);
+                
                 tvOpen = itemView.findViewById(R.id.tv_open);
                 tvHigh = itemView.findViewById(R.id.tv_high);
                 tvLow = itemView.findViewById(R.id.tv_low);
                 tvPrevClose = itemView.findViewById(R.id.tv_prev_close);
                 tvVolume = itemView.findViewById(R.id.tv_volume);
                 tvChangeAbs = itemView.findViewById(R.id.tv_change_abs);
+                
+                divider = itemView.findViewById(R.id.market_divider);
+                gridLayout = itemView.findViewById(R.id.gridLayout);
             }
         }
     }

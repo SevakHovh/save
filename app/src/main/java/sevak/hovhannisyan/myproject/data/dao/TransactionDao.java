@@ -19,26 +19,26 @@ import sevak.hovhannisyan.myproject.data.model.Transaction;
 @Dao
 public interface TransactionDao {
     
-    @Query("SELECT * FROM transactions ORDER BY date DESC")
-    LiveData<List<Transaction>> getAllTransactions();
+    @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY date DESC")
+    LiveData<List<Transaction>> getAllTransactions(String userId);
     
-    @Query("SELECT * FROM transactions WHERE type = :type ORDER BY date DESC")
-    LiveData<List<Transaction>> getTransactionsByType(String type);
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND type = :type ORDER BY date DESC")
+    LiveData<List<Transaction>> getTransactionsByType(String userId, String type);
     
-    @Query("SELECT * FROM transactions WHERE category = :category ORDER BY date DESC")
-    LiveData<List<Transaction>> getTransactionsByCategory(String category);
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND category = :category ORDER BY date DESC")
+    LiveData<List<Transaction>> getTransactionsByCategory(String userId, String category);
     
     @Query("SELECT * FROM transactions WHERE id = :id")
     LiveData<Transaction> getTransactionById(long id);
     
-    @Query("SELECT SUM(amount) FROM transactions WHERE type = 'INCOME'")
-    LiveData<Double> getTotalIncome();
+    @Query("SELECT SUM(amount) FROM transactions WHERE userId = :userId AND type = 'INCOME'")
+    LiveData<Double> getTotalIncome(String userId);
     
-    @Query("SELECT SUM(amount) FROM transactions WHERE type = 'EXPENSE'")
-    LiveData<Double> getTotalExpense();
+    @Query("SELECT SUM(amount) FROM transactions WHERE userId = :userId AND type = 'EXPENSE'")
+    LiveData<Double> getTotalExpense(String userId);
     
-    @Query("SELECT SUM(CASE WHEN type = 'INCOME' THEN amount ELSE -amount END) FROM transactions")
-    LiveData<Double> getBalance();
+    @Query("SELECT SUM(CASE WHEN type = 'INCOME' THEN amount ELSE -amount END) FROM transactions WHERE userId = :userId")
+    LiveData<Double> getBalance(String userId);
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertTransaction(Transaction transaction);
@@ -55,6 +55,6 @@ public interface TransactionDao {
     @Query("DELETE FROM transactions WHERE id = :id")
     void deleteTransactionById(long id);
     
-    @Query("DELETE FROM transactions")
-    void deleteAllTransactions();
+    @Query("DELETE FROM transactions WHERE userId = :userId")
+    void deleteAllTransactions(String userId);
 }
