@@ -41,6 +41,7 @@ import org.json.JSONObject;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import sevak.hovhannisyan.myproject.BuildConfig;
 import sevak.hovhannisyan.myproject.R;
 import sevak.hovhannisyan.myproject.api.OpenRouterRequest;
 import sevak.hovhannisyan.myproject.api.OpenRouterResponse;
@@ -56,8 +57,8 @@ public class AiAssistantFragment extends Fragment {
 
     private static final String TAG = "AiAssistantFragment";
     
-    // API KEY
-    private static final String OPENROUTER_API_KEY = "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";
+    // KEY SECURED: Pulled from local.properties via BuildConfig
+    private static final String OPENROUTER_API_KEY = BuildConfig.OPENROUTER_API_KEY;
     
     // Models
     private static final String INTELLIGENCE_MODEL = "openai/gpt-4o-mini"; 
@@ -119,7 +120,7 @@ public class AiAssistantFragment extends Fragment {
         rvChatMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvChatMessages.setAdapter(chatAdapter);
 
-        chatAdapter.addMessage(new ChatMessage("SAVE AI Online. Strategic Core synchronized.", false));
+        chatAdapter.addMessage(new ChatMessage("SAVE AI Online. Neural link secured.", false));
 
         observeData();
         setupButtons();
@@ -194,7 +195,7 @@ public class AiAssistantFragment extends Fragment {
         viewModel.insertTransaction(t);
         
         lastDetectedPrice = 0.0;
-        chatAdapter.addMessage(new ChatMessage("Strategic log updated. Balance recalculated.", false));
+        chatAdapter.addMessage(new ChatMessage("Strategic ledger updated successfully.", false));
         rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
     }
 
@@ -216,7 +217,7 @@ public class AiAssistantFragment extends Fragment {
                     if (response.isSuccessful() && response.body() != null && !response.body().getChoices().isEmpty()) {
                         displayFinalAnswer(response.body().getChoices().get(0).getMessage().getContent());
                     } else if (response.code() >= 400 && !modelId.equals(FREE_FALLBACK)) {
-                        Log.w(TAG, "Primary Core busy (" + response.code() + "). Switching to Reserve Link...");
+                        Log.w(TAG, "Primary Core busy. Switching to Reserve Link...");
                         runMainBrain(userInput, FREE_FALLBACK);
                     } else {
                         handleErrorResponse(response);
@@ -232,7 +233,7 @@ public class AiAssistantFragment extends Fragment {
     }
 
     private void handleErrorResponse(Response<?> response) {
-        String errorBody = "Unknown error body";
+        String errorBody = "Unknown error";
         try {
             if (response.errorBody() != null) {
                 errorBody = response.errorBody().string();
@@ -242,8 +243,8 @@ public class AiAssistantFragment extends Fragment {
         Log.e(TAG, "API Error: " + response.code() + " - " + errorBody);
         
         String msg;
-        if (response.code() == 401) msg = "Authentication failed. Re-verify API Key.";
-        else if (response.code() == 402) msg = "Neural Credits Depleted (402). Check dashboard limit.";
+        if (response.code() == 401) msg = "Authentication failed. Ensure key is in local.properties.";
+        else if (response.code() == 402) msg = "Neural Credits Depleted (402). Check OpenRouter limit.";
         else if (response.code() == 429) msg = "Neural bandwidth exceeded. Retrying...";
         else msg = "System Alert " + response.code();
         

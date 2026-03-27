@@ -1,6 +1,7 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
-    // Hilt plugin for dependency injection (Java-compatible)
     alias(libs.plugins.hilt.android.plugin)
     id("com.google.gms.google-services")
 }
@@ -17,6 +18,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Load OpenRouter API Key from local.properties
+        val properties = Properties()
+        val localPropertiesFile = project.rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            properties.load(localPropertiesFile.inputStream())
+        }
+        val apiKey = properties.getProperty("OPENROUTER_API_KEY") ?: ""
+        buildConfigField("String", "OPENROUTER_API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
@@ -35,6 +45,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true // Required to use BuildConfig
     }
 }
 
@@ -43,45 +54,26 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    
-    // Core Splash Screen
     implementation("androidx.core:core-splashscreen:1.0.1")
-
-    // Room (Java - annotationProcessor)
     implementation(libs.room.runtime)
     annotationProcessor(libs.room.compiler)
-
-    // Hilt (Java - annotationProcessor)
     implementation(libs.hilt.android)
     annotationProcessor(libs.hilt.compiler)
-    
-    // Navigation
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
-    
-    // Lifecycle
     implementation(libs.lifecycle.viewmodel)
     implementation(libs.lifecycle.livedata)
     implementation(libs.lifecycle.runtime)
-
-    // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
-
-    // Retrofit & OkHttp
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
-
-    // ML Kit Text Recognition
     implementation("com.google.mlkit:text-recognition:16.0.1")
-
-    // Charts
     implementation(libs.mpandroidchart)
-    
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
