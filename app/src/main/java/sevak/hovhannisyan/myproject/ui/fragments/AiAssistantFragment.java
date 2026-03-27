@@ -56,10 +56,10 @@ public class AiAssistantFragment extends Fragment {
 
     private static final String TAG = "AiAssistantFragment";
     
-    // API KEY - Ensure this is the latest key from your OpenRouter dashboard
-    private static final String OPENROUTER_API_KEY = "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";
+    // API KEY
+    private static final String OPENROUTER_API_KEY = "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";
     
-    // Primary Models
+    // Models
     private static final String INTELLIGENCE_MODEL = "openai/gpt-4o-mini"; 
     private static final String VISION_MODEL = "qwen/qwen-2-vl-72b-instruct";
     private static final String FREE_FALLBACK = "google/gemini-flash-1.5-8b:free"; 
@@ -92,7 +92,7 @@ public class AiAssistantFragment extends Fragment {
             new ActivityResultContracts.GetContent(),
             uri -> {
                 if (uri != null) {
-                    processBillWithQwen(uri);
+                    processBillWithAi(uri, VISION_MODEL);
                 }
             }
     );
@@ -119,7 +119,7 @@ public class AiAssistantFragment extends Fragment {
         rvChatMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvChatMessages.setAdapter(chatAdapter);
 
-        chatAdapter.addMessage(new ChatMessage("SAVE AI Online. GPT-4o-mini & Qwen-VL Active.", false));
+        chatAdapter.addMessage(new ChatMessage("SAVE AI Online. Strategic Core synchronized.", false));
 
         observeData();
         setupButtons();
@@ -177,7 +177,7 @@ public class AiAssistantFragment extends Fragment {
             return;
         }
 
-        chatAdapter.addMessage(new ChatMessage("Processing with GPT-4o-mini...", false));
+        chatAdapter.addMessage(new ChatMessage("Synchronizing with Neural Core...", false));
         rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
 
         runMainBrain(userInput, INTELLIGENCE_MODEL);
@@ -194,7 +194,7 @@ public class AiAssistantFragment extends Fragment {
         viewModel.insertTransaction(t);
         
         lastDetectedPrice = 0.0;
-        chatAdapter.addMessage(new ChatMessage("Transaction logged to database.", false));
+        chatAdapter.addMessage(new ChatMessage("Strategic log updated. Balance recalculated.", false));
         rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
     }
 
@@ -215,6 +215,9 @@ public class AiAssistantFragment extends Fragment {
                 public void onResponse(@NonNull Call<OpenRouterResponse> call, @NonNull Response<OpenRouterResponse> response) {
                     if (response.isSuccessful() && response.body() != null && !response.body().getChoices().isEmpty()) {
                         displayFinalAnswer(response.body().getChoices().get(0).getMessage().getContent());
+                    } else if (response.code() >= 400 && !modelId.equals(FREE_FALLBACK)) {
+                        Log.w(TAG, "Primary Core busy (" + response.code() + "). Switching to Reserve Link...");
+                        runMainBrain(userInput, FREE_FALLBACK);
                     } else {
                         handleErrorResponse(response);
                     }
@@ -222,13 +225,14 @@ public class AiAssistantFragment extends Fragment {
 
                 @Override
                 public void onFailure(@NonNull Call<OpenRouterResponse> call, @NonNull Throwable t) {
-                    handleError("Network failure: " + t.getMessage());
+                    if (!modelId.equals(FREE_FALLBACK)) runMainBrain(userInput, FREE_FALLBACK);
+                    else handleError("Strategic core link failed: " + t.getMessage());
                 }
             });
     }
 
     private void handleErrorResponse(Response<?> response) {
-        String errorBody = "";
+        String errorBody = "Unknown error body";
         try {
             if (response.errorBody() != null) {
                 errorBody = response.errorBody().string();
@@ -238,15 +242,10 @@ public class AiAssistantFragment extends Fragment {
         Log.e(TAG, "API Error: " + response.code() + " - " + errorBody);
         
         String msg;
-        if (response.code() == 401) {
-            msg = "Authentication Failed (401). Please check your OpenRouter API Key.";
-        } else if (response.code() == 402) {
-            msg = "Insufficient Credits (402). Please top up your OpenRouter account.";
-        } else if (response.code() == 429) {
-            msg = "Rate limit reached. Please wait a moment.";
-        } else {
-            msg = "AI Error " + response.code() + ": " + (errorBody.length() > 50 ? "Request failed" : errorBody);
-        }
+        if (response.code() == 401) msg = "Authentication failed. Re-verify API Key.";
+        else if (response.code() == 402) msg = "Neural Credits Depleted (402). Check dashboard limit.";
+        else if (response.code() == 429) msg = "Neural bandwidth exceeded. Retrying...";
+        else msg = "System Alert " + response.code();
         
         handleError(msg);
     }
@@ -269,8 +268,12 @@ public class AiAssistantFragment extends Fragment {
         });
     }
 
-    private void processBillWithQwen(Uri uri) {
-        chatAdapter.addMessage(new ChatMessage("Analyzing receipt with Qwen-VL...", false));
+    private void processBillWithAi(Uri uri, String modelId) {
+        if (modelId.equals(VISION_MODEL)) {
+            chatAdapter.addMessage(new ChatMessage("Visual Scanning (High-Res)...", false));
+        } else {
+            chatAdapter.addMessage(new ChatMessage("Visual Scanning (Standard)...", false));
+        }
         rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
         
         try {
@@ -290,7 +293,7 @@ public class AiAssistantFragment extends Fragment {
             contents.add(OpenRouterRequest.Content.text("Identify total amount and primary category from this receipt. Return RAW JSON ONLY: {\"total\":0.0,\"category\":\"\"}"));
             contents.add(OpenRouterRequest.Content.image(base64Image));
 
-            OpenRouterRequest request = new OpenRouterRequest(VISION_MODEL, 
+            OpenRouterRequest request = new OpenRouterRequest(modelId, 
                 Collections.singletonList(new OpenRouterRequest.Message("user", contents)));
 
             openRouterService.analyzeBill("Bearer " + OPENROUTER_API_KEY, "https://saveapp.ai", "SAVE AI", request)
@@ -299,6 +302,9 @@ public class AiAssistantFragment extends Fragment {
                     public void onResponse(@NonNull Call<OpenRouterResponse> call, @NonNull Response<OpenRouterResponse> response) {
                         if (response.isSuccessful() && response.body() != null && !response.body().getChoices().isEmpty()) {
                             parseAiJsonResponse(response.body().getChoices().get(0).getMessage().getContent());
+                        } else if (response.code() >= 400 && !modelId.equals(FREE_FALLBACK)) {
+                            Log.w(TAG, "Primary Scanner busy. Falling back...");
+                            processBillWithAi(uri, FREE_FALLBACK);
                         } else {
                             handleErrorResponse(response);
                         }
@@ -306,11 +312,12 @@ public class AiAssistantFragment extends Fragment {
 
                     @Override
                     public void onFailure(@NonNull Call<OpenRouterResponse> call, @NonNull Throwable t) {
-                        handleError("Scanner failure: " + t.getMessage());
+                        if (!modelId.equals(FREE_FALLBACK)) processBillWithAi(uri, FREE_FALLBACK);
+                        else handleError("Visual link failure: " + t.getMessage());
                     }
                 });
         } catch (Exception e) {
-            handleError("Scanner error: " + e.getMessage());
+            handleError("Scanner core error: " + e.getMessage());
         }
     }
 
@@ -331,12 +338,12 @@ public class AiAssistantFragment extends Fragment {
                 lastDetectedPrice = json.optDouble("total", 0.0);
                 lastDetectedCategory = json.optString("category", "Unknown");
                 
-                String message = "Receipt Analyzed:\nAmount: " + currencyFormat.format(lastDetectedPrice) + 
-                                "\nCategory: " + lastDetectedCategory + "\n\nType 'save it' to log this transaction.";
+                String message = "Neural Scan Verified:\nAmount: " + currencyFormat.format(lastDetectedPrice) + 
+                                "\nCategory: " + lastDetectedCategory + "\n\nSay 'save it' to log this.";
                 chatAdapter.addMessage(new ChatMessage(message, false));
                 rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
             } catch (Exception e) {
-                chatAdapter.addMessage(new ChatMessage("Could not parse receipt data. AI Response: " + content, false));
+                chatAdapter.addMessage(new ChatMessage("Neural extraction failed. Response: " + content, false));
                 rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
             }
         });
