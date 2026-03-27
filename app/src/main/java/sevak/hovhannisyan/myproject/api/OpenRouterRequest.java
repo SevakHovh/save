@@ -18,7 +18,6 @@ public class OpenRouterRequest {
         @SerializedName("role")
         private String role;
         
-        // This can be a String for text-only, or a List<Content> for vision
         @SerializedName("content")
         private Object content;
 

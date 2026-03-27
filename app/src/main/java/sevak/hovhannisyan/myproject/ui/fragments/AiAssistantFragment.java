@@ -4,8 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,7 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.PopupMenu;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -33,7 +30,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -51,6 +47,7 @@ import sevak.hovhannisyan.myproject.api.OpenRouterResponse;
 import sevak.hovhannisyan.myproject.api.OpenRouterService;
 import sevak.hovhannisyan.myproject.data.model.ChatMessage;
 import sevak.hovhannisyan.myproject.data.model.Transaction;
+import sevak.hovhannisyan.myproject.data.model.TransactionType;
 import sevak.hovhannisyan.myproject.ui.adapter.ChatAdapter;
 import sevak.hovhannisyan.myproject.ui.viewmodel.MainViewModel;
 
@@ -59,13 +56,13 @@ public class AiAssistantFragment extends Fragment {
 
     private static final String TAG = "AiAssistantFragment";
     
-    // CURRENT API KEY
-    private static final String OPENROUTER_API_KEY = "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";
+    // API KEY - Ensure this is the latest key from your OpenRouter dashboard
+    private static final String OPENROUTER_API_KEY = "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";
     
-    // ACTIVE MODEL - Change this to a ':free' model if you don't have credits
-    private static final String CLAUDE_MODEL = "anthropic/claude-3.5-sonnet"; 
-    private static final String FREE_FALLBACK = "google/gemini-flash-1.5-8b"; // Very fast and usually cheaper/free
+    // Primary Models
+    private static final String INTELLIGENCE_MODEL = "openai/gpt-4o-mini"; 
     private static final String VISION_MODEL = "qwen/qwen-2-vl-72b-instruct";
+    private static final String FREE_FALLBACK = "google/gemini-flash-1.5-8b:free"; 
 
     private enum AiMode {
         REGULAR, BILL_DETECTOR
@@ -122,7 +119,7 @@ public class AiAssistantFragment extends Fragment {
         rvChatMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvChatMessages.setAdapter(chatAdapter);
 
-        chatAdapter.addMessage(new ChatMessage("SAVE AI Online. Intelligence Mode active.", false));
+        chatAdapter.addMessage(new ChatMessage("SAVE AI Online. GPT-4o-mini & Qwen-VL Active.", false));
 
         observeData();
         setupButtons();
@@ -175,29 +172,29 @@ public class AiAssistantFragment extends Fragment {
         chatAdapter.addMessage(new ChatMessage(userInput, true));
         etUserInput.setText("");
         
-        // Smart Save Detection
         if ((userInput.toLowerCase().contains("save it") || userInput.toLowerCase().contains("add it")) && lastDetectedPrice > 0) {
             saveDetectedBill();
             return;
         }
 
-        chatAdapter.addMessage(new ChatMessage("Synchronizing with Neural Core...", false));
+        chatAdapter.addMessage(new ChatMessage("Processing with GPT-4o-mini...", false));
         rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
 
-        runMainBrain(userInput, CLAUDE_MODEL);
+        runMainBrain(userInput, INTELLIGENCE_MODEL);
     }
 
     private void saveDetectedBill() {
         Transaction t = new Transaction();
         t.setAmount(lastDetectedPrice);
         t.setCategory(lastDetectedCategory);
-        t.setType("EXPENSE");
+        t.setType(TransactionType.EXPENSE);
         t.setDate(new Date());
         t.setDescription("SAVE AI Scan (" + lastDetectedCategory + ")");
+        
         viewModel.insertTransaction(t);
         
         lastDetectedPrice = 0.0;
-        chatAdapter.addMessage(new ChatMessage("Neural Data Synchronized. Transaction logged.", false));
+        chatAdapter.addMessage(new ChatMessage("Transaction logged to database.", false));
         rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
     }
 
@@ -206,35 +203,51 @@ public class AiAssistantFragment extends Fragment {
         String context = String.format(Locale.US, "CONTEXT: [Date: %s] [Bal: %.2f] [Inc: %.2f] [Exp: %.2f]", 
                 dateStr, currentBalance, currentIncome, currentExpense);
         
-        String prompt = "Professional Financial Assistant. Context: " + context + ". User Input: " + userInput;
+        List<OpenRouterRequest.Message> messages = new ArrayList<>();
+        messages.add(new OpenRouterRequest.Message("system", "You are a Professional Financial Assistant. Context: " + context));
+        messages.add(new OpenRouterRequest.Message("user", userInput));
 
-        OpenRouterRequest request = new OpenRouterRequest(modelId, 
-                Collections.singletonList(new OpenRouterRequest.Message("user", prompt)));
+        OpenRouterRequest request = new OpenRouterRequest(modelId, messages);
 
         openRouterService.analyzeBill("Bearer " + OPENROUTER_API_KEY, "https://saveapp.ai", "SAVE AI", request)
             .enqueue(new Callback<OpenRouterResponse>() {
                 @Override
-                public void onResponse(Call<OpenRouterResponse> call, Response<OpenRouterResponse> response) {
+                public void onResponse(@NonNull Call<OpenRouterResponse> call, @NonNull Response<OpenRouterResponse> response) {
                     if (response.isSuccessful() && response.body() != null && !response.body().getChoices().isEmpty()) {
                         displayFinalAnswer(response.body().getChoices().get(0).getMessage().getContent());
-                    } else if (response.code() == 402 && !modelId.equals(FREE_FALLBACK)) {
-                        // If 402 on Claude, try to fallback to a free/cheaper model automatically
-                        runMainBrain(userInput, FREE_FALLBACK);
                     } else {
                         handleErrorResponse(response);
                     }
                 }
 
                 @Override
-                public void onFailure(Call<OpenRouterResponse> call, Throwable t) {
-                    handleError("Strategic core link failed.");
+                public void onFailure(@NonNull Call<OpenRouterResponse> call, @NonNull Throwable t) {
+                    handleError("Network failure: " + t.getMessage());
                 }
             });
     }
 
     private void handleErrorResponse(Response<?> response) {
-        String msg = "System Alert: Code " + response.code();
-        if (response.code() == 402) msg = "Neural Credits Depleted. Please top up your OpenRouter account to use Claude.";
+        String errorBody = "";
+        try {
+            if (response.errorBody() != null) {
+                errorBody = response.errorBody().string();
+            }
+        } catch (Exception ignored) {}
+        
+        Log.e(TAG, "API Error: " + response.code() + " - " + errorBody);
+        
+        String msg;
+        if (response.code() == 401) {
+            msg = "Authentication Failed (401). Please check your OpenRouter API Key.";
+        } else if (response.code() == 402) {
+            msg = "Insufficient Credits (402). Please top up your OpenRouter account.";
+        } else if (response.code() == 429) {
+            msg = "Rate limit reached. Please wait a moment.";
+        } else {
+            msg = "AI Error " + response.code() + ": " + (errorBody.length() > 50 ? "Request failed" : errorBody);
+        }
+        
         handleError(msg);
     }
 
@@ -257,17 +270,24 @@ public class AiAssistantFragment extends Fragment {
     }
 
     private void processBillWithQwen(Uri uri) {
-        chatAdapter.addMessage(new ChatMessage("Neural Scanning Active...", false));
+        chatAdapter.addMessage(new ChatMessage("Analyzing receipt with Qwen-VL...", false));
+        rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
+        
         try {
             InputStream is = requireContext().getContentResolver().openInputStream(uri);
             Bitmap bitmap = BitmapFactory.decodeStream(is);
+            if (bitmap == null) {
+                handleError("Failed to decode image.");
+                return;
+            }
+            
             Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 800, (int)(800.0 * bitmap.getHeight() / bitmap.getWidth()), true);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos);
             String base64Image = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
 
             List<OpenRouterRequest.Content> contents = new ArrayList<>();
-            contents.add(OpenRouterRequest.Content.text("Return JSON ONLY: {\"total\":0.0,\"category\":\"\"}"));
+            contents.add(OpenRouterRequest.Content.text("Identify total amount and primary category from this receipt. Return RAW JSON ONLY: {\"total\":0.0,\"category\":\"\"}"));
             contents.add(OpenRouterRequest.Content.image(base64Image));
 
             OpenRouterRequest request = new OpenRouterRequest(VISION_MODEL, 
@@ -276,45 +296,50 @@ public class AiAssistantFragment extends Fragment {
             openRouterService.analyzeBill("Bearer " + OPENROUTER_API_KEY, "https://saveapp.ai", "SAVE AI", request)
                 .enqueue(new Callback<OpenRouterResponse>() {
                     @Override
-                    public void onResponse(Call<OpenRouterResponse> call, Response<OpenRouterResponse> response) {
-                        if (getActivity() == null) return;
-                        getActivity().runOnUiThread(() -> {
-                            if (chatAdapter.getItemCount() > 0) chatAdapter.removeLastMessage();
-                            if (response.isSuccessful() && response.body() != null && !response.body().getChoices().isEmpty()) {
-                                parseAiJsonResponse(response.body().getChoices().get(0).getMessage().getContent());
-                            } else {
-                                handleErrorResponse(response);
-                            }
-                        });
+                    public void onResponse(@NonNull Call<OpenRouterResponse> call, @NonNull Response<OpenRouterResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && !response.body().getChoices().isEmpty()) {
+                            parseAiJsonResponse(response.body().getChoices().get(0).getMessage().getContent());
+                        } else {
+                            handleErrorResponse(response);
+                        }
                     }
 
                     @Override
-                    public void onFailure(Call<OpenRouterResponse> call, Throwable t) {
-                        if (getActivity() == null) return;
-                        getActivity().runOnUiThread(() -> {
-                            if (chatAdapter.getItemCount() > 0) chatAdapter.removeLastMessage();
-                            chatAdapter.addMessage(new ChatMessage("Visual link failure.", false));
-                        });
+                    public void onFailure(@NonNull Call<OpenRouterResponse> call, @NonNull Throwable t) {
+                        handleError("Scanner failure: " + t.getMessage());
                     }
                 });
         } catch (Exception e) {
-            chatAdapter.addMessage(new ChatMessage("Scanner initialization error.", false));
+            handleError("Scanner error: " + e.getMessage());
         }
     }
 
     private void parseAiJsonResponse(String content) {
-        try {
-            String jsonPart = content;
-            if (content.contains("{") && content.contains("}")) {
-                jsonPart = content.substring(content.indexOf("{"), content.lastIndexOf("}") + 1);
+        if (getActivity() == null) return;
+        getActivity().runOnUiThread(() -> {
+            try {
+                if (chatAdapter.getItemCount() > 0) chatAdapter.removeLastMessage();
+                
+                String jsonPart = content;
+                if (content.contains("```json")) {
+                    jsonPart = content.substring(content.indexOf("```json") + 7, content.lastIndexOf("```"));
+                } else if (content.contains("{") && content.contains("}")) {
+                    jsonPart = content.substring(content.indexOf("{"), content.lastIndexOf("}") + 1);
+                }
+                
+                JSONObject json = new JSONObject(jsonPart.trim());
+                lastDetectedPrice = json.optDouble("total", 0.0);
+                lastDetectedCategory = json.optString("category", "Unknown");
+                
+                String message = "Receipt Analyzed:\nAmount: " + currencyFormat.format(lastDetectedPrice) + 
+                                "\nCategory: " + lastDetectedCategory + "\n\nType 'save it' to log this transaction.";
+                chatAdapter.addMessage(new ChatMessage(message, false));
+                rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
+            } catch (Exception e) {
+                chatAdapter.addMessage(new ChatMessage("Could not parse receipt data. AI Response: " + content, false));
+                rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
             }
-            JSONObject json = new JSONObject(jsonPart);
-            lastDetectedPrice = json.optDouble("total", 0.0);
-            lastDetectedCategory = json.optString("category", "Unknown");
-            chatAdapter.addMessage(new ChatMessage("Neural Scan Verified:\nAmount: " + currencyFormat.format(lastDetectedPrice) + "\nCategory: " + lastDetectedCategory + "\n\nSay 'save it' to log this.", false));
-        } catch (Exception e) {
-            chatAdapter.addMessage(new ChatMessage("Neural extraction failed.", false));
-        }
+        });
     }
 
     private void observeData() {

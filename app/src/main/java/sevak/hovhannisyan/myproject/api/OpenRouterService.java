@@ -4,9 +4,14 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
+import retrofit2.http.Url;
 
 public interface OpenRouterService {
-    @POST("api/v1/chat/completions")
+    /**
+     * Using @Url or a full path in @POST ensures the URL is exactly as intended,
+     * overriding any baseUrl issues.
+     */
+    @POST("https://openrouter.ai/api/v1/chat/completions")
     Call<OpenRouterResponse> analyzeBill(
         @Header("Authorization") String authorization,
         @Header("HTTP-Referer") String siteUrl,

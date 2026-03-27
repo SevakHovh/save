@@ -33,9 +33,11 @@ public class AppModule {
     public static final String THEME_PREFS = "theme_prefs";
     private static final String ALPHAVANTAGE_BASE_URL = "https://www.alphavantage.co/";
     private static final String FINNHUB_BASE_URL = "https://finnhub.io/";
+    
+    // Set to domain root to satisfy Retrofit requirement, 
+    // but full URL is used in service to ensure correctness.
     private static final String OPENROUTER_BASE_URL = "https://openrouter.ai/";
     
-    // Fixed: Including 'v1/' in the base URL to ensure HTTPS security compliance and correct pathing.
     private static final String FREE_CRYPTO_BASE_URL = "https://api.freecryptoapi.com/v1/";
 
     @Provides
@@ -70,11 +72,12 @@ public class AppModule {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
         
+        // Increased timeouts to handle large Vision models and complex AI responses.
         return new OkHttpClient.Builder()
                 .addInterceptor(logging)
-                .connectTimeout(60, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
+                .connectTimeout(120, TimeUnit.SECONDS)
+                .readTimeout(120, TimeUnit.SECONDS)
+                .writeTimeout(120, TimeUnit.SECONDS)
                 .build();
     }
 
