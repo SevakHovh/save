@@ -3,6 +3,7 @@ package sevak.hovhannisyan.myproject.data.repository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FieldValue;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +32,7 @@ public class UserRepository {
     private static final String FIELD_GOAL_START_TIME = "goalStartTime";
     private static final String FIELD_GOAL_END_TIME = "goalEndTime";
     private static final String FIELD_EXCLUDED_DATES = "excludedDates";
+    private static final String FIELD_COMPLETED_DATES = "completedDates";
 
     @Inject
     public UserRepository(FirebaseFirestore firestore, FirebaseAuth auth) {
@@ -64,8 +66,9 @@ public class UserRepository {
         data.put(FIELD_GOAL_START_BALANCE, currentBalance);
         data.put(FIELD_GOAL_START_TIME, System.currentTimeMillis());
         data.put(FIELD_GOAL_END_TIME, endTime);
-        // Reset excluded dates when setting a new goal
+        // Reset progress when setting a new goal
         data.put(FIELD_EXCLUDED_DATES, new java.util.ArrayList<Long>());
+        data.put(FIELD_COMPLETED_DATES, new java.util.ArrayList<Long>());
 
         firestore.collection(COLLECTION_USERS).document(userId)
                 .set(data, com.google.firebase.firestore.SetOptions.merge());
@@ -80,6 +83,14 @@ public class UserRepository {
 
         firestore.collection(COLLECTION_USERS).document(userId)
                 .set(data, com.google.firebase.firestore.SetOptions.merge());
+    }
+
+    public void markDateAsCompleted(long dateInMillis) {
+        String userId = getCurrentUserId();
+        if (userId == null) return;
+
+        firestore.collection(COLLECTION_USERS).document(userId)
+                .update(FIELD_COMPLETED_DATES, FieldValue.arrayUnion(dateInMillis));
     }
 
     public LiveData<Map<String, Object>> getUserData() {

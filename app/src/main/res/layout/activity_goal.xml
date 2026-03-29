@@ -87,10 +87,21 @@
                     tools:text="Save $15.50 / day" />
 
                 <TextView
+                    android:id="@+id/tv_daily_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/income_green"
+                    android:textSize="14sp"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:text="Today's goal completed!" />
+
+                <TextView
                     android:id="@+id/tv_current_savings"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="16dp"
                     android:textColor="@color/on_surface"
                     android:textSize="22sp"
                     tools:text="$1,234.50 total saved" />
@@ -101,7 +112,36 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/on_surface_variant"
                     android:textSize="16sp"
+                    android:layout_marginBottom="16dp"
                     tools:text="$765.50 to go" />
+
+                <!-- Action Buttons -->
+                <LinearLayout
+                    android:id="@+id/layout_actions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_quick_save"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:text="Quick Save"
+                        app:icon="@drawable/ic_check" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_custom_save"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:text="Custom Save"
+                        app:icon="@drawable/ic_edit" />
+                </LinearLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

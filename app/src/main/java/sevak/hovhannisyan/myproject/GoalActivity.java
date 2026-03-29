@@ -1,41 +1,50 @@
 package sevak.hovhannisyan.myproject;
 
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.View;
 import android.widget.CalendarView;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import sevak.hovhannisyan.myproject.data.model.Transaction;
+import sevak.hovhannisyan.myproject.data.model.TransactionType;
 import sevak.hovhannisyan.myproject.ui.viewmodel.MainViewModel;
 
 @AndroidEntryPoint
 public class GoalActivity extends AppCompatActivity {
 
     private MainViewModel viewModel;
-    private TextView tvGoalTitle, tvCurrentSavings, tvRemainingAmount, tvPercentage, tvDailyReq;
+    private TextView tvGoalTitle, tvCurrentSavings, tvRemainingAmount, tvPercentage, tvDailyReq, tvDailyStatus;
     private CircularProgressIndicator progressGoal;
-    private MaterialButton btnUpdateGoal;
+    private MaterialButton btnUpdateGoal, btnQuickSave, btnCustomSave;
     private ImageButton btnBack;
     private CalendarView calendarView;
     private NumberFormat currencyFormat;
     
     private List<Long> excludedDates = new ArrayList<>();
+    private List<Long> completedDates = new ArrayList<>();
+    private double currentDailyRequirement = 0.0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,12 +64,14 @@ public class GoalActivity extends AppCompatActivity {
         tvRemainingAmount = findViewById(R.id.tv_remaining_amount);
         tvPercentage = findViewById(R.id.tv_percentage);
         tvDailyReq = findViewById(R.id.tv_daily_requirement);
+        tvDailyStatus = findViewById(R.id.tv_daily_status);
         progressGoal = findViewById(R.id.progress_goal_circular);
         btnUpdateGoal = findViewById(R.id.btn_update_goal);
+        btnQuickSave = findViewById(R.id.btn_quick_save);
+        btnCustomSave = findViewById(R.id.btn_custom_save);
         btnBack = findViewById(R.id.btn_back);
         calendarView = findViewById(R.id.calendar_view);
 
-        // Prevent selecting past dates in the UI
         calendarView.setMinDate(System.currentTimeMillis() - 1000);
 
         btnBack.setOnClickListener(v -> finish());
@@ -71,7 +82,6 @@ public class GoalActivity extends AppCompatActivity {
             cal.set(Calendar.MILLISECOND, 0);
             long selectedDate = cal.getTimeInMillis();
 
-            // Set today at midnight for comparison
             Calendar today = Calendar.getInstance();
             today.set(Calendar.HOUR_OF_DAY, 0);
             today.set(Calendar.MINUTE, 0);
@@ -93,9 +103,62 @@ public class GoalActivity extends AppCompatActivity {
             viewModel.updateExcludedDates(excludedDates);
         });
 
+        btnQuickSave.setOnClickListener(v -> {
+            if (currentDailyRequirement > 0) {
+                addTransaction(currentDailyRequirement, "Daily Savings (Quick Save)");
+                viewModel.markDateAsCompleted(getTodayMidnight());
+            } else {
+                Toast.makeText(this, "No daily requirement set", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btnCustomSave.setOnClickListener(v -> showCustomSaveDialog());
+
         btnUpdateGoal.setOnClickListener(v -> {
             Toast.makeText(this, "Please update goal from Dashboard to reset timeline.", Toast.LENGTH_LONG).show();
         });
+    }
+
+    private void showCustomSaveDialog() {
+        TextInputEditText etAmount = new TextInputEditText(this);
+        etAmount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        etAmount.setHint("Enter amount");
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Custom Save")
+                .setView(etAmount)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String val = etAmount.getText().toString();
+                    if (!val.isEmpty()) {
+                        double amount = Double.parseDouble(val);
+                        addTransaction(amount, "Daily Savings (Custom)");
+                        if (amount >= currentDailyRequirement) {
+                            viewModel.markDateAsCompleted(getTodayMidnight());
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void addTransaction(double amount, String description) {
+        Transaction transaction = new Transaction();
+        transaction.setAmount(amount);
+        transaction.setType(TransactionType.INCOME);
+        transaction.setCategory("Savings");
+        transaction.setDescription(description);
+        transaction.setDate(new Date());
+        viewModel.insertTransaction(transaction);
+        Toast.makeText(this, "Saved " + currencyFormat.format(amount), Toast.LENGTH_SHORT).show();
+    }
+
+    private long getTodayMidnight() {
+        Calendar today = Calendar.getInstance();
+        today.set(Calendar.HOUR_OF_DAY, 0);
+        today.set(Calendar.MINUTE, 0);
+        today.set(Calendar.SECOND, 0);
+        today.set(Calendar.MILLISECOND, 0);
+        return today.getTimeInMillis();
     }
 
     private void observeViewModel() {
@@ -109,6 +172,13 @@ public class GoalActivity extends AppCompatActivity {
                     Object excluded = data.get("excludedDates");
                     if (excluded instanceof List) {
                         excludedDates = (List<Long>) excluded;
+                    }
+                }
+                
+                if (data.containsKey("completedDates")) {
+                    Object completed = data.get("completedDates");
+                    if (completed instanceof List) {
+                        completedDates = (List<Long>) completed;
                     }
                 }
 
@@ -141,26 +211,44 @@ public class GoalActivity extends AppCompatActivity {
         progressGoal.setProgress(Math.min(progress, 100));
         tvPercentage.setText(Math.min(progress, 100) + "%");
 
+        long todayMidnight = getTodayMidnight();
+        boolean isCompletedToday = completedDates.contains(todayMidnight);
+
         if (endTime > System.currentTimeMillis()) {
-            long diffInMillis = endTime - System.currentTimeMillis();
-            long totalDays = TimeUnit.MILLISECONDS.toDays(diffInMillis) + 1;
+            long diffInMillis = endTime - todayMidnight;
+            long totalDays = TimeUnit.MILLISECONDS.toDays(diffInMillis);
+            if (totalDays <= 0) totalDays = 1;
             
-            long validDays = totalDays;
-            for (Long excluded : excludedDates) {
-                if (excluded > System.currentTimeMillis() && excluded < endTime) {
-                    validDays--;
+            long validDays = 0;
+            for (int i = 0; i < totalDays; i++) {
+                Calendar check = Calendar.getInstance();
+                check.setTimeInMillis(todayMidnight);
+                check.add(Calendar.DAY_OF_YEAR, i);
+                long checkTime = check.getTimeInMillis();
+                if (!excludedDates.contains(checkTime) && !completedDates.contains(checkTime)) {
+                    validDays++;
                 }
             }
             
             if (validDays > 0) {
-                double daily = remaining / validDays;
-                tvDailyReq.setText("Save " + currencyFormat.format(daily) + " / day");
+                currentDailyRequirement = remaining / validDays;
+                tvDailyReq.setText("Save " + currencyFormat.format(currentDailyRequirement) + " / day");
                 tvDailyReq.setVisibility(View.VISIBLE);
             } else {
-                tvDailyReq.setText("Timeline tight!");
+                currentDailyRequirement = 0;
+                tvDailyReq.setText("Target reached or no days left!");
             }
         } else {
             tvDailyReq.setVisibility(View.GONE);
+        }
+
+        if (isCompletedToday) {
+            tvDailyStatus.setVisibility(View.VISIBLE);
+            tvDailyStatus.setText("Today's goal completed!");
+            btnQuickSave.setEnabled(false);
+        } else {
+            tvDailyStatus.setVisibility(View.GONE);
+            btnQuickSave.setEnabled(true);
         }
     }
 }

@@ -9,6 +9,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -26,12 +28,12 @@ import androidx.navigation.Navigation;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.datepicker.CalendarConstraints;
-import android.app.AlarmManager;
 import com.google.android.material.datepicker.DateValidatorPointForward;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -80,6 +82,8 @@ public class DashboardFragment extends Fragment {
     private double currentProfileSalary = 0.0;
     private double currentProfileFixedExpenses = 0.0;
     private long selectedEndTime = -1;
+
+    private final String[] expenseCategories = {"Food", "Transport", "Shopping", "Entertainment", "Health", "Utilities", "Other", "Custom..."};
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -163,7 +167,6 @@ public class DashboardFragment extends Fragment {
 
         if (tvTargetDate != null) {
             tvTargetDate.setOnClickListener(v -> {
-                // Constraint: User cannot select past dates
                 CalendarConstraints constraints = new CalendarConstraints.Builder()
                         .setValidator(DateValidatorPointForward.now())
                         .build();
@@ -265,7 +268,22 @@ public class DashboardFragment extends Fragment {
     private void showExpenseMenu() {
         View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_expense, null);
         TextInputEditText etExpenseAmount = dialogView.findViewById(R.id.et_expense_amount);
+        AutoCompleteTextView spinnerCategory = dialogView.findViewById(R.id.spinner_category);
+        TextInputLayout tilCustomCategory = dialogView.findViewById(R.id.til_custom_category);
+        TextInputEditText etCustomCategory = dialogView.findViewById(R.id.et_custom_category);
         MaterialButton btnAddFixed = dialogView.findViewById(R.id.btn_add_fixed_expenses);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, expenseCategories);
+        spinnerCategory.setAdapter(adapter);
+
+        spinnerCategory.setOnItemClickListener((parent, view, position, id) -> {
+            String selected = (String) parent.getItemAtPosition(position);
+            if ("Custom...".equals(selected)) {
+                tilCustomCategory.setVisibility(View.VISIBLE);
+            } else {
+                tilCustomCategory.setVisibility(View.GONE);
+            }
+        });
 
         btnAddFixed.setText("Pay Fixed (" + currencyFormat.format(currentProfileFixedExpenses) + ")");
 
@@ -274,8 +292,16 @@ public class DashboardFragment extends Fragment {
                 .setView(dialogView)
                 .setPositiveButton("Add", (d, which) -> {
                     String amountStr = etExpenseAmount.getText().toString();
+                    String category = spinnerCategory.getText().toString();
+                    
+                    if ("Custom...".equals(category)) {
+                        category = etCustomCategory.getText().toString().trim();
+                    }
+
+                    if (category.isEmpty()) category = "Other";
+                    
                     if (!amountStr.isEmpty()) {
-                        addTransaction(Double.parseDouble(amountStr), "Manual Expense", TransactionType.EXPENSE, "Other");
+                        addTransaction(Double.parseDouble(amountStr), "Manual Expense", TransactionType.EXPENSE, category);
                     }
                 })
                 .setNegativeButton("Cancel", null)

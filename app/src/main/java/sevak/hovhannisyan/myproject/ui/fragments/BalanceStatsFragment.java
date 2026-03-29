@@ -15,9 +15,13 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 
+import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -28,7 +32,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -46,6 +49,7 @@ public class BalanceStatsFragment extends Fragment {
 
     private MainViewModel viewModel;
     private LineChart lineChart;
+    private BarChart barChart;
     private ChipGroup chipGroupTime;
     private ImageButton btnBack;
     
@@ -64,39 +68,50 @@ public class BalanceStatsFragment extends Fragment {
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         lineChart = view.findViewById(R.id.line_chart);
+        barChart = view.findViewById(R.id.bar_chart);
         chipGroupTime = view.findViewById(R.id.chip_group_time);
         btnBack = view.findViewById(R.id.btn_back);
 
         btnBack.setOnClickListener(v -> Navigation.findNavController(v).navigateUp());
 
-        setupChartStyle();
+        setupLineChartStyle();
+        setupBarChartStyle();
         setupChips();
         observeTransactions();
     }
 
-    private void setupChartStyle() {
+    private void setupLineChartStyle() {
         lineChart.getDescription().setEnabled(false);
         lineChart.setDrawGridBackground(false);
-        lineChart.setTouchEnabled(true);
-        lineChart.setDragEnabled(true);
-        lineChart.setScaleEnabled(true);
-        lineChart.setPinchZoom(true);
-        lineChart.setExtraOffsets(10, 10, 10, 10);
-
+        lineChart.getAxisRight().setEnabled(false);
+        lineChart.getLegend().setEnabled(false);
+        
         XAxis xAxis = lineChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
-        xAxis.setTextColor(Color.GRAY);
         xAxis.setGranularity(1f);
-
+        
         YAxis leftAxis = lineChart.getAxisLeft();
         leftAxis.setDrawGridLines(true);
-        leftAxis.setGridColor(Color.LTGRAY);
-        leftAxis.setTextColor(Color.GRAY);
         leftAxis.setDrawZeroLine(true);
+    }
 
-        lineChart.getAxisRight().setEnabled(false);
-        lineChart.getLegend().setEnabled(false);
+    private void setupBarChartStyle() {
+        barChart.getDescription().setEnabled(false);
+        barChart.setDrawGridBackground(false);
+        barChart.getAxisRight().setEnabled(false);
+        barChart.getLegend().setEnabled(false);
+        barChart.setDrawBarShadow(false);
+        barChart.setDrawValueAboveBar(true);
+
+        XAxis xAxis = barChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(false);
+        xAxis.setGranularity(1f);
+
+        YAxis leftAxis = barChart.getAxisLeft();
+        leftAxis.setDrawGridLines(true);
+        leftAxis.setAxisMinimum(0f);
     }
 
     private void setupChips() {
@@ -124,7 +139,6 @@ public class BalanceStatsFragment extends Fragment {
     private void updateChart() {
         if (allTransactions.isEmpty()) return;
 
-        long now = System.currentTimeMillis();
         long startTime = 0;
         SimpleDateFormat sdf;
 
@@ -173,6 +187,7 @@ public class BalanceStatsFragment extends Fragment {
 
         List<Entry> incomeEntries = new ArrayList<>();
         List<Entry> expenseEntries = new ArrayList<>();
+        List<BarEntry> barEntries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
 
         List<Long> allKeys = new ArrayList<>(incomeData.keySet());
@@ -183,29 +198,47 @@ public class BalanceStatsFragment extends Fragment {
 
         for (int i = 0; i < allKeys.size(); i++) {
             long key = allKeys.get(i);
-            incomeEntries.add(new Entry(i, incomeData.getOrDefault(key, 0.0).floatValue()));
-            expenseEntries.add(new Entry(i, expenseData.getOrDefault(key, 0.0).floatValue()));
+            double inc = incomeData.getOrDefault(key, 0.0);
+            double exp = expenseData.getOrDefault(key, 0.0);
+            
+            incomeEntries.add(new Entry(i, (float) inc));
+            expenseEntries.add(new Entry(i, (float) exp));
+            barEntries.add(new BarEntry(i, (float) exp));
             labels.add(sdf.format(new Date(key)));
         }
 
-        lineChart.getXAxis().setValueFormatter(new ValueFormatter() {
+        ValueFormatter formatter = new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
                 int idx = (int) value;
                 return (idx >= 0 && idx < labels.size()) ? labels.get(idx) : "";
             }
-        });
+        };
 
-        LineDataSet incomeSet = createDataSet(incomeEntries, "Income", ContextCompat.getColor(requireContext(), R.color.income_green));
-        LineDataSet expenseSet = createDataSet(expenseEntries, "Expenses", ContextCompat.getColor(requireContext(), R.color.expense_red));
+        lineChart.getXAxis().setValueFormatter(formatter);
+        barChart.getXAxis().setValueFormatter(formatter);
 
-        LineData lineData = new LineData(incomeSet, expenseSet);
-        lineChart.setData(lineData);
+        // Line Chart Data
+        LineDataSet incomeSet = createLineDataSet(incomeEntries, "Income", ContextCompat.getColor(requireContext(), R.color.income_green));
+        LineDataSet expenseSet = createLineDataSet(expenseEntries, "Expenses", ContextCompat.getColor(requireContext(), R.color.expense_red));
+        lineChart.setData(new LineData(incomeSet, expenseSet));
         lineChart.animateY(1000);
         lineChart.invalidate();
+
+        // Bar Chart Data (Histogram)
+        BarDataSet barDataSet = new BarDataSet(barEntries, "Expenses");
+        barDataSet.setColor(ContextCompat.getColor(requireContext(), R.color.expense_red));
+        barDataSet.setDrawValues(true);
+        barDataSet.setValueTextSize(10f);
+        
+        BarData barData = new BarData(barDataSet);
+        barChart.setData(barData);
+        barChart.setFitBars(true);
+        barChart.animateY(1000);
+        barChart.invalidate();
     }
 
-    private LineDataSet createDataSet(List<Entry> entries, String label, int color) {
+    private LineDataSet createLineDataSet(List<Entry> entries, String label, int color) {
         LineDataSet set = new LineDataSet(entries, label);
         set.setColor(color);
         set.setLineWidth(3f);
@@ -217,7 +250,6 @@ public class BalanceStatsFragment extends Fragment {
         set.setDrawValues(false);
         set.setDrawFilled(true);
         
-        // Add gradient fill
         GradientDrawable gradient = new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[]{Color.argb(100, Color.red(color), Color.green(color), Color.blue(color)), Color.TRANSPARENT}

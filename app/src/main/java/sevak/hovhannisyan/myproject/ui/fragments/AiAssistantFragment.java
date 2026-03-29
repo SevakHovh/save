@@ -87,6 +87,7 @@ public class AiAssistantFragment extends Fragment {
     private Double currentBalance = 0.0;
     private Double currentIncome = 0.0;
     private Double currentExpense = 0.0;
+    private List<Transaction> allTransactions = new ArrayList<>();
     private Map<String, Object> userData;
 
     private final ActivityResultLauncher<String> getContent = registerForActivityResult(
@@ -200,12 +201,41 @@ public class AiAssistantFragment extends Fragment {
     }
 
     private void runMainBrain(String userInput, String modelId) {
-        String dateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
-        String context = String.format(Locale.US, "CONTEXT: [Date: %s] [Bal: %.2f] [Inc: %.2f] [Exp: %.2f]", 
-                dateStr, currentBalance, currentIncome, currentExpense);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US);
+        String dateStr = sdf.format(new Date());
+        
+        StringBuilder historyBuilder = new StringBuilder();
+        historyBuilder.append("USER FINANCIAL HISTORY:\n");
+        
+        // Include recent transactions for context
+        int count = 0;
+        List<Transaction> recent = new ArrayList<>(allTransactions);
+        Collections.reverse(recent); // Most recent first
+        for (Transaction t : recent) {
+            if (count >= 15) break; // Limit to last 15 for prompt size
+            historyBuilder.append(String.format("- %s: %s %.2f (%s)\n", 
+                sdf.format(t.getDate()), t.getType(), t.getAmount(), t.getCategory()));
+            count++;
+        }
+
+        String userContext = "N/A";
+        if (userData != null) {
+            userContext = String.format("Salary: %s, Fixed Expenses: %s, Goal: %s",
+                userData.getOrDefault("salary", 0),
+                userData.getOrDefault("fixedExpenses", 0),
+                userData.getOrDefault("goalAmount", 0));
+        }
+
+        String systemPrompt = String.format(Locale.US, 
+            "You are a Professional Financial Assistant. " +
+            "CURRENT STATUS: [Date: %s] [Balance: %.2f] [Total Inc: %.2f] [Total Exp: %.2f]\n" +
+            "USER PROFILE: %s\n" +
+            "%s\n" +
+            "Analyze the user's data and provide accurate, personalized financial advice. Be concise but insightful.",
+            dateStr, currentBalance, currentIncome, currentExpense, userContext, historyBuilder.toString());
         
         List<OpenRouterRequest.Message> messages = new ArrayList<>();
-        messages.add(new OpenRouterRequest.Message("system", "You are a Professional Financial Assistant. Context: " + context));
+        messages.add(new OpenRouterRequest.Message("system", systemPrompt));
         messages.add(new OpenRouterRequest.Message("user", userInput));
 
         OpenRouterRequest request = new OpenRouterRequest(modelId, messages);
@@ -355,5 +385,8 @@ public class AiAssistantFragment extends Fragment {
         viewModel.getTotalIncome().observe(getViewLifecycleOwner(), income -> currentIncome = income != null ? income : 0.0);
         viewModel.getTotalExpense().observe(getViewLifecycleOwner(), expense -> currentExpense = expense != null ? expense : 0.0);
         viewModel.getUserData().observe(getViewLifecycleOwner(), data -> userData = data);
+        viewModel.getAllTransactions().observe(getViewLifecycleOwner(), transactions -> {
+            if (transactions != null) allTransactions = transactions;
+        });
     }
 }

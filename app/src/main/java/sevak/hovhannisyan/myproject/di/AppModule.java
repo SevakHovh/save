@@ -21,6 +21,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import sevak.hovhannisyan.myproject.api.AlphaVantageService;
+import sevak.hovhannisyan.myproject.api.CoinGeckoService;
 import sevak.hovhannisyan.myproject.api.FinnhubService;
 import sevak.hovhannisyan.myproject.api.FreeCryptoService;
 import sevak.hovhannisyan.myproject.api.OpenRouterService;
@@ -33,9 +34,8 @@ public class AppModule {
     public static final String THEME_PREFS = "theme_prefs";
     private static final String ALPHAVANTAGE_BASE_URL = "https://www.alphavantage.co/";
     private static final String FINNHUB_BASE_URL = "https://finnhub.io/";
+    private static final String COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3/";
     
-    // Set to domain root to satisfy Retrofit requirement, 
-    // but full URL is used in service to ensure correctness.
     private static final String OPENROUTER_BASE_URL = "https://openrouter.ai/";
     
     private static final String FREE_CRYPTO_BASE_URL = "https://api.freecryptoapi.com/v1/";
@@ -72,7 +72,6 @@ public class AppModule {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
         
-        // Increased timeouts to handle large Vision models and complex AI responses.
         return new OkHttpClient.Builder()
                 .addInterceptor(logging)
                 .connectTimeout(120, TimeUnit.SECONDS)
@@ -101,6 +100,17 @@ public class AppModule {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
                 .create(FinnhubService.class);
+    }
+
+    @Provides
+    @Singleton
+    public CoinGeckoService provideCoinGeckoService(OkHttpClient client) {
+        return new Retrofit.Builder()
+                .baseUrl(COINGECKO_BASE_URL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(CoinGeckoService.class);
     }
 
     @Provides

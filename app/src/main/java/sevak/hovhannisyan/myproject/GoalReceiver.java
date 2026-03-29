@@ -6,16 +6,25 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
 
+import sevak.hovhannisyan.myproject.di.AppModule;
+
 public class GoalReceiver extends BroadcastReceiver {
     private static final String CHANNEL_ID = "goal_notifications";
+    private static final String KEY_NOTIFICATIONS_ENABLED = "notifications_enabled";
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        showNotification(context);
+        SharedPreferences prefs = context.getSharedPreferences(AppModule.GOAL_PREFS, Context.MODE_PRIVATE);
+        boolean isEnabled = prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true);
+        
+        if (isEnabled) {
+            showNotification(context);
+        }
     }
 
     private void showNotification(Context context) {

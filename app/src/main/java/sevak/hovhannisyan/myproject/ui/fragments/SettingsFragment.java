@@ -1,6 +1,8 @@
 package sevak.hovhannisyan.myproject.ui.fragments;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,10 +24,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import dagger.hilt.android.AndroidEntryPoint;
 import sevak.hovhannisyan.myproject.LoginActivity;
 import sevak.hovhannisyan.myproject.R;
+import sevak.hovhannisyan.myproject.di.AppModule;
 import sevak.hovhannisyan.myproject.ui.ThemeManager;
 import sevak.hovhannisyan.myproject.ui.viewmodel.MainViewModel;
 
@@ -38,6 +42,10 @@ public class SettingsFragment extends Fragment {
     @Inject
     FirebaseAuth mAuth;
 
+    @Inject
+    @Named(AppModule.GOAL_PREFS)
+    SharedPreferences goalPrefs;
+
     private MainViewModel viewModel;
 
     private MaterialButton btnBack;
@@ -49,6 +57,8 @@ public class SettingsFragment extends Fragment {
     private MaterialSwitch switchNotifications;
     private LinearLayout layoutPersonalInfo;
     private TextView tvUserEmail;
+
+    private static final String KEY_NOTIFICATIONS_ENABLED = "notifications_enabled";
 
     @Nullable
     @Override
@@ -90,7 +100,12 @@ public class SettingsFragment extends Fragment {
 
         btnClearData.setOnClickListener(v -> showClearDataConfirmation());
 
+        // Load saved notification preference
+        boolean isEnabled = goalPrefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true);
+        switchNotifications.setChecked(isEnabled);
+
         switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            goalPrefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, isChecked).apply();
             String msg = isChecked ? "Notifications enabled" : "Notifications disabled";
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
         });

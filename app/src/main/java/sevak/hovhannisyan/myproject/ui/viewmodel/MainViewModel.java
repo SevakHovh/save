@@ -19,10 +19,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import sevak.hovhannisyan.myproject.api.CoinGeckoResponse;
+import sevak.hovhannisyan.myproject.api.CoinGeckoService;
 import sevak.hovhannisyan.myproject.api.FinnhubResponse;
 import sevak.hovhannisyan.myproject.api.FinnhubService;
-import sevak.hovhannisyan.myproject.api.FreeCryptoListResponse;
-import sevak.hovhannisyan.myproject.api.FreeCryptoResponse;
 import sevak.hovhannisyan.myproject.api.FreeCryptoService;
 import sevak.hovhannisyan.myproject.data.model.Transaction;
 import sevak.hovhannisyan.myproject.data.repository.TransactionRepository;
@@ -34,6 +34,7 @@ public class MainViewModel extends ViewModel {
     private final TransactionRepository repository;
     private final UserRepository userRepository;
     private final FinnhubService finnhubService;
+    private final CoinGeckoService coinGeckoService;
     private final FreeCryptoService cryptoService;
     
     private final MutableLiveData<String> currentUserId = new MutableLiveData<>();
@@ -49,24 +50,25 @@ public class MainViewModel extends ViewModel {
     private final MutableLiveData<String> marketError = new MutableLiveData<>();
     
     private static final String FINNHUB_KEY = "d701p69r01qjh1odtingd701p69r01qjh1odtio0";
-    private static final String CRYPTO_KEY = "jimmsl5u6l9mr32fcshk";
     
     private static final String[] DASHBOARD_STOCKS = {"AAPL", "MSFT", "GOOGL"};
-    private static final String[] DASHBOARD_CRYPTO = {"BTC", "ETH", "SOL"};
+    // CoinGecko uses IDs for markets: bitcoin, ethereum, solana
+    private static final String DASHBOARD_CRYPTO_IDS = "bitcoin,ethereum,solana";
     
     private static final String[] STOCK_SYMBOLS = {
             "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "NFLX", "AMD", "INTC", 
             "DIS", "PYPL", "COST", "SBUX", "V", "MA", "JPM", "BAC", "WMT", "KO"
     };
     
-    private static final String[] CRYPTO_LIST = {"BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "DOT", "MATIC", "LTC", "AVAX", "LINK", "XLM", "UNI"};
+    private static final String ALL_CRYPTO_IDS = "bitcoin,ethereum,solana,binancecoin,ripple,cardano,dogecoin,polkadot,matic-network,litecoin,avalanche-2,chainlink,stellar,uniswap";
     
     @Inject
     public MainViewModel(TransactionRepository repository, UserRepository userRepository, 
-                         FinnhubService finnhubService, FreeCryptoService cryptoService) {
+                         FinnhubService finnhubService, CoinGeckoService coinGeckoService, FreeCryptoService cryptoService) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.finnhubService = finnhubService;
+        this.coinGeckoService = coinGeckoService;
         this.cryptoService = cryptoService;
         
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -93,27 +95,29 @@ public class MainViewModel extends ViewModel {
     public void fetchMarketData() {
         isMarketLoading.setValue(true);
         marketData.setValue(new ArrayList<>());
-        fetchData(DASHBOARD_STOCKS, DASHBOARD_CRYPTO);
+        fetchData(DASHBOARD_STOCKS, DASHBOARD_CRYPTO_IDS);
     }
 
     public void fetchStocks() {
         isMarketLoading.setValue(true);
         marketData.setValue(new ArrayList<>());
-        fetchData(STOCK_SYMBOLS, new String[]{});
+        fetchData(STOCK_SYMBOLS, "");
     }
 
     public void fetchCrypto() {
         isMarketLoading.setValue(true);
         marketData.setValue(new ArrayList<>());
-        fetchData(new String[]{}, CRYPTO_LIST);
+        fetchData(new String[]{}, ALL_CRYPTO_IDS);
     }
 
-    private synchronized void fetchData(String[] stocks, String[] cryptoSymbols) {
+    private synchronized void fetchData(String[] stocks, String cryptoIds) {
         final List<FinnhubResponse> combinedResults = Collections.synchronizedList(new ArrayList<>());
-        final int totalRequests = stocks.length + cryptoSymbols.length;
+        final int totalStockRequests = stocks.length;
+        final boolean hasCrypto = cryptoIds != null && !cryptoIds.isEmpty();
+        final int totalExpectedRequests = totalStockRequests + (hasCrypto ? 1 : 0);
         final int[] finishedRequests = {0};
 
-        if (totalRequests == 0) {
+        if (totalExpectedRequests == 0) {
             isMarketLoading.postValue(false);
             return;
         }
@@ -127,55 +131,43 @@ public class MainViewModel extends ViewModel {
                         res.setSymbol(symbol);
                         if (res.getCurrentPrice() != 0) combinedResults.add(res);
                     }
-                    checkFinished(finishedRequests, totalRequests, combinedResults);
+                    checkFinished(finishedRequests, totalExpectedRequests, combinedResults);
                 }
 
                 @Override
                 public void onFailure(Call<FinnhubResponse> call, Throwable t) {
-                    checkFinished(finishedRequests, totalRequests, combinedResults);
+                    checkFinished(finishedRequests, totalExpectedRequests, combinedResults);
                 }
             });
         }
 
-        for (final String symbol : cryptoSymbols) {
-            String authHeader = "Bearer " + CRYPTO_KEY;
-            cryptoService.getTickers(authHeader, symbol).enqueue(new Callback<FreeCryptoListResponse>() {
+        if (hasCrypto) {
+            coinGeckoService.getMarkets("usd", cryptoIds, "market_cap_desc", 100, 1, false, "24h")
+                .enqueue(new Callback<List<CoinGeckoResponse>>() {
                 @Override
-                public void onResponse(Call<FreeCryptoListResponse> call, Response<FreeCryptoListResponse> response) {
-                    if (response.isSuccessful() && response.body() != null && response.body().getSymbols() != null) {
-                        List<FreeCryptoResponse> list = response.body().getSymbols();
-                        if (!list.isEmpty()) {
-                            FreeCryptoResponse cryptoRes = list.get(0);
-                            FinnhubResponse mapped = mapToFinnhubResponse(cryptoRes);
-                            if (mapped.getSymbol() == null || mapped.getSymbol().isEmpty()) {
-                                mapped.setSymbol(symbol);
-                            }
-                            combinedResults.add(mapped);
+                public void onResponse(Call<List<CoinGeckoResponse>> call, Response<List<CoinGeckoResponse>> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        for (CoinGeckoResponse coin : response.body()) {
+                            combinedResults.add(mapCoinToFinnhub(coin));
                         }
-                    } else {
-                        android.util.Log.e("MainViewModel", "Crypto Error " + response.code() + " for " + symbol);
                     }
-                    checkFinished(finishedRequests, totalRequests, combinedResults);
+                    checkFinished(finishedRequests, totalExpectedRequests, combinedResults);
                 }
 
                 @Override
-                public void onFailure(Call<FreeCryptoListResponse> call, Throwable t) {
-                    android.util.Log.e("MainViewModel", "Crypto Fail for " + symbol + ": " + t.getMessage());
-                    checkFinished(finishedRequests, totalRequests, combinedResults);
+                public void onFailure(Call<List<CoinGeckoResponse>> call, Throwable t) {
+                    checkFinished(finishedRequests, totalExpectedRequests, combinedResults);
                 }
             });
         }
     }
 
-    private FinnhubResponse mapToFinnhubResponse(FreeCryptoResponse crypto) {
+    private FinnhubResponse mapCoinToFinnhub(CoinGeckoResponse coin) {
         FinnhubResponse res = new FinnhubResponse();
-        res.setSymbol(crypto.getSymbol() != null ? crypto.getSymbol().toUpperCase() : "");
-        res.setCurrentPrice(crypto.getPrice());
-        res.setChange(crypto.getDailyChange());
-        res.setPercentChange(crypto.getDailyPercentChange());
-        res.setHighPrice(crypto.getHigh());
-        res.setLowPrice(crypto.getLow());
-        res.setVolume(crypto.getVolume());
+        res.setSymbol(coin.getSymbol().toUpperCase());
+        res.setCurrentPrice(coin.getCurrentPrice());
+        res.setChange(coin.getPriceChange24h());
+        res.setPercentChange(coin.getPriceChangePercentage24h());
         return res;
     }
 
@@ -209,6 +201,10 @@ public class MainViewModel extends ViewModel {
 
     public void updateExcludedDates(List<Long> dates) {
         userRepository.updateExcludedDates(dates);
+    }
+
+    public void markDateAsCompleted(long dateInMillis) {
+        userRepository.markDateAsCompleted(dateInMillis);
     }
 
     public void saveUserFinancialData(double salary, double fixedExpenses) {
