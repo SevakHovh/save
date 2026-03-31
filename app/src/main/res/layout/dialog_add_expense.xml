@@ -10,7 +10,7 @@
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Expense Amount"
+        android:hint="@string/expense_amount"
         app:startIconDrawable="@android:drawable/ic_menu_delete">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -27,7 +27,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:hint="Category (Optional)">
+        android:hint="@string/category_optional">
 
         <AutoCompleteTextView
             android:id="@+id/spinner_category"
@@ -44,7 +44,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:hint="Enter Custom Category"
+        android:hint="@string/enter_custom_category"
         android:visibility="gone">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -69,7 +69,7 @@
         style="@style/Widget.Material3.Button.TonalButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Pay Fixed Expenses"
+        android:text="@string/pay_fixed_expenses_label"
         app:icon="@android:drawable/ic_menu_send" />
 
 </LinearLayout>

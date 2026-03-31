@@ -16,6 +16,7 @@
     <string name="target_amount">Target amount</string>
     <string name="select_end_date">Select End Date</string>
     <string name="market_pulse">Market Pulse</string>
+    <string name="market_explorer">Market Explorer</string>
     <string name="goal_achieved_prefix">%d%% of Goal Achieved (Net Savings)</string>
     <string name="target_date_prefix">Target: %s</string>
     <string name="my_save">My SAVE</string>
@@ -123,6 +124,8 @@
     <string name="market_prev_close">Prev Close</string>
     <string name="market_volume">Volume</string>
     <string name="market_change">Change</string>
+    <string name="stocks">Stocks</string>
+    <string name="crypto">Crypto</string>
 
     <!-- Market Watch -->
     <string name="market_watch">Market Watch</string>
@@ -142,5 +145,23 @@
     <string name="invalid_amount">Invalid amount</string>
     <string name="select_target_date">Please select a target date</string>
     <string name="goal_set_success">Goal set with deadline!</string>
+
+    <!-- Income/Expense Dialogs -->
+    <string name="income_amount">Income Amount</string>
+    <string name="expense_amount">Expense Amount</string>
+    <string name="add_salary_label">Add Salary</string>
+    <string name="pay_fixed_expenses_label">Pay Fixed Expenses</string>
+    <string name="category_optional">Category (Optional)</string>
+    <string name="enter_custom_category">Enter Custom Category</string>
+
+    <!-- Expense Categories -->
+    <string name="cat_food">Food</string>
+    <string name="cat_transport">Transport</string>
+    <string name="cat_shopping">Shopping</string>
+    <string name="cat_entertainment">Entertainment</string>
+    <string name="cat_health">Health</string>
+    <string name="cat_utilities">Utilities</string>
+    <string name="cat_other">Other</string>
+    <string name="cat_custom">Custom...</string>
 
 </resources>

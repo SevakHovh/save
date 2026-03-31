@@ -16,6 +16,7 @@
     <string name="target_amount">Թիրախային գումար</string>
     <string name="select_end_date">Ընտրեք ավարտի ամսաթիվը</string>
     <string name="market_pulse">Շուկայի զարկերակը</string>
+    <string name="market_explorer">Շուկայի հետազոտող</string>
     <string name="goal_achieved_prefix">Նպատակի %d%%-ը իրականացված է (զուտ խնայողություններ)</string>
     <string name="target_date_prefix">Թիրախ՝ %s</string>
     <string name="my_save">Իմ SAVE-ը</string>
@@ -123,6 +124,8 @@
     <string name="market_prev_close">Նախորդ փակում</string>
     <string name="market_volume">Ծավալ</string>
     <string name="market_change">Փոփոխություն</string>
+    <string name="stocks">Ակցիաներ</string>
+    <string name="crypto">Կրիպտո</string>
 
     <!-- Market Watch -->
     <string name="market_watch">Շուկայի դիտում</string>
@@ -142,5 +145,23 @@
     <string name="invalid_amount">Անվավեր գումար</string>
     <string name="select_target_date">Խնդրում ենք ընտրել թիրախային ամսաթիվ</string>
     <string name="goal_set_success">Նպատակը սահմանված է ժամկետով:</string>
+
+    <!-- Income/Expense Dialogs -->
+    <string name="income_amount">Եկամտի գումար</string>
+    <string name="expense_amount">Ծախսի գումար</string>
+    <string name="add_salary_label">Ավելացնել աշխատավարձ</string>
+    <string name="pay_fixed_expenses_label">Վճարել հաստատուն ծախսերը</string>
+    <string name="category_optional">Կատեգորիա (ըստ ցանկության)</string>
+    <string name="enter_custom_category">Մուտքագրեք այլ կատեգորիա</string>
+
+    <!-- Expense Categories -->
+    <string name="cat_food">Սնունդ</string>
+    <string name="cat_transport">Տրանսպորտ</string>
+    <string name="cat_shopping">Գնումներ</string>
+    <string name="cat_entertainment">Ժամանց</string>
+    <string name="cat_health">Առողջություն</string>
+    <string name="cat_utilities">Կոմունալ վճարներ</string>
+    <string name="cat_other">Այլ</string>
+    <string name="cat_custom">Այլ...</string>
 
 </resources>

@@ -82,8 +82,6 @@ public class DashboardFragment extends Fragment {
     private double currentProfileFixedExpenses = 0.0;
     private long selectedEndTime = -1;
 
-    private final String[] expenseCategories = {"Food", "Transport", "Shopping", "Entertainment", "Health", "Utilities", "Other", "Custom..."};
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -266,12 +264,23 @@ public class DashboardFragment extends Fragment {
         TextInputEditText etCustomCategory = dialogView.findViewById(R.id.et_custom_category);
         MaterialButton btnAddFixed = dialogView.findViewById(R.id.btn_add_fixed_expenses);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, expenseCategories);
+        String[] localizedCategories = {
+                getString(R.string.cat_food),
+                getString(R.string.cat_transport),
+                getString(R.string.cat_shopping),
+                getString(R.string.cat_entertainment),
+                getString(R.string.cat_health),
+                getString(R.string.cat_utilities),
+                getString(R.string.cat_other),
+                getString(R.string.cat_custom)
+        };
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, localizedCategories);
         spinnerCategory.setAdapter(adapter);
 
         spinnerCategory.setOnItemClickListener((parent, view, position, id) -> {
             String selected = (String) parent.getItemAtPosition(position);
-            if ("Custom...".equals(selected)) {
+            if (getString(R.string.cat_custom).equals(selected)) {
                 tilCustomCategory.setVisibility(View.VISIBLE);
             } else {
                 tilCustomCategory.setVisibility(View.GONE);
@@ -287,11 +296,11 @@ public class DashboardFragment extends Fragment {
                     String amountStr = etExpenseAmount.getText().toString();
                     String category = spinnerCategory.getText().toString();
                     
-                    if ("Custom...".equals(category)) {
+                    if (getString(R.string.cat_custom).equals(category)) {
                         category = etCustomCategory.getText().toString().trim();
                     }
 
-                    if (category.isEmpty()) category = "Other";
+                    if (category.isEmpty()) category = getString(R.string.cat_other);
                     
                     if (!amountStr.isEmpty()) {
                         addTransaction(Double.parseDouble(amountStr), "Manual Expense", TransactionType.EXPENSE, category);

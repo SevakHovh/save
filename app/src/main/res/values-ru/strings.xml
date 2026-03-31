@@ -16,6 +16,7 @@
     <string name="target_amount">Целевая сумма</string>
     <string name="select_end_date">Выберите дату завершения</string>
     <string name="market_pulse">Пульс рынка</string>
+    <string name="market_explorer">Исследователь рынка</string>
     <string name="goal_achieved_prefix">%d%% цели достигнуто (чистые сбережения)</string>
     <string name="target_date_prefix">Цель: %s</string>
     <string name="my_save">Мой SAVE</string>
@@ -77,6 +78,7 @@
     <string name="language_title">Язык</string>
     <string name="language_en">Английский</string>
     <string name="language_ru">Русский</string>
+    <string name="language_hy">Армянский (Հայերեն)</string>
     <string name="language_dialog_title">Выберите язык</string>
     <string name="change_language">Изменить язык</string>
 
@@ -122,6 +124,8 @@
     <string name="market_prev_close">Пред закр</string>
     <string name="market_volume">Объем</string>
     <string name="market_change">Изм</string>
+    <string name="stocks">Акции</string>
+    <string name="crypto">Крипто</string>
 
     <!-- Рыночные показатели -->
     <string name="market_watch">Рынок</string>
@@ -141,5 +145,23 @@
     <string name="invalid_amount">Неверная сумма</string>
     <string name="select_target_date">Пожалуйста, выберите дату</string>
     <string name="goal_set_success">Цель установлена!</string>
+
+    <!-- Income/Expense Dialogs -->
+    <string name="income_amount">Сумма дохода</string>
+    <string name="expense_amount">Сумма расхода</string>
+    <string name="add_salary_label">Добавить зарплату</string>
+    <string name="pay_fixed_expenses_label">Оплатить фикс. расходы</string>
+    <string name="category_optional">Категория (необязательно)</string>
+    <string name="enter_custom_category">Введите категорию</string>
+
+    <!-- Expense Categories -->
+    <string name="cat_food">Еда</string>
+    <string name="cat_transport">Тրանспорт</string>
+    <string name="cat_shopping">Покупки</string>
+    <string name="cat_entertainment">Развлечения</string>
+    <string name="cat_health">Здоровье</string>
+    <string name="cat_utilities">Коммунальные услуги</string>
+    <string name="cat_other">Другое</string>
+    <string name="cat_custom">Своя...</string>
 
 </resources>

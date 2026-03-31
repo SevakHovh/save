@@ -29,7 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Market Explorer"
+            android:text="@string/market_explorer"
             android:textColor="@color/on_background"
             android:textSize="20sp"
             android:textStyle="bold" />
@@ -49,7 +49,7 @@
             style="@style/Widget.Material3.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Stocks"
+            android:text="@string/stocks"
             android:checked="true" />
 
         <com.google.android.material.chip.Chip
@@ -57,7 +57,7 @@
             style="@style/Widget.Material3.Chip.Filter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Crypto" />
+            android:text="@string/crypto" />
 
     </com.google.android.material.chip.ChipGroup>
 

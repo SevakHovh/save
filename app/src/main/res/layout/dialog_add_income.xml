@@ -10,7 +10,7 @@
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Income Amount"
+        android:hint="@string/income_amount"
         app:startIconDrawable="@android:drawable/ic_menu_add">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -35,7 +35,7 @@
         style="@style/Widget.Material3.Button.TonalButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Add Salary"
+        android:text="@string/add_salary_label"
         app:icon="@android:drawable/ic_input_add" />
 
 </LinearLayout>
