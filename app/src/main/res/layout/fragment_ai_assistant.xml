@@ -55,7 +55,7 @@
                     android:id="@+id/et_user_input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Talk to SAVE Intelligence..."
+                    android:hint="@string/ai_placeholder"
                     android:inputType="textMultiLine"
                     android:maxLines="4"
                     android:paddingStart="20dp"
@@ -70,7 +70,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="56dp"
                 android:minWidth="100dp"
-                android:text="Send"
+                android:text="@string/send"
                 app:cornerRadius="28dp"
                 app:icon="@android:drawable/ic_menu_send"
                 app:iconPadding="4dp" />
@@ -83,7 +83,7 @@
             android:layout_height="48dp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="4dp"
-            android:text="Switch to Intelligence Mode"
+            android:text="@string/ai_mode_intelligence"
             app:cornerRadius="16dp"
             app:icon="@android:drawable/ic_menu_info_details"
             app:iconGravity="textStart" />

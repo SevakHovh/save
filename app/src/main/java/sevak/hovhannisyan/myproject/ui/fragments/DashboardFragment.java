@@ -67,7 +67,6 @@ public class DashboardFragment extends Fragment {
     private LinearProgressIndicator progressGoal;
     private EditText etGoalAmount;
     private MaterialButton btnSetGoal;
-    private MaterialButton btnSettings;
     private TextView tvTargetDate;
 
     private MaterialCardView cardBalance;
@@ -89,7 +88,8 @@ public class DashboardFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-        currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault());
+        // Using US locale for currency to ensure dollar sign stays consistent as per user request
+        currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
     }
 
     @Nullable
@@ -110,7 +110,6 @@ public class DashboardFragment extends Fragment {
             progressGoal = view.findViewById(R.id.progress_goal);
             etGoalAmount = view.findViewById(R.id.et_goal_amount);
             btnSetGoal = view.findViewById(R.id.btn_set_goal);
-            btnSettings = view.findViewById(R.id.btn_settings);
             tvTargetDate = view.findViewById(R.id.tv_target_date_dashboard);
 
             cardBalance = view.findViewById(R.id.card_balance);
@@ -132,12 +131,6 @@ public class DashboardFragment extends Fragment {
     }
 
     private void setupButtons() {
-        if (btnSettings != null) {
-            btnSettings.setOnClickListener(v -> {
-                Navigation.findNavController(v).navigate(R.id.action_dashboardFragment_to_settingsFragment);
-            });
-        }
-
         if (cardMarket != null) {
             cardMarket.setOnClickListener(v -> {
                 Navigation.findNavController(v).navigate(R.id.action_dashboardFragment_to_marketFragment);
@@ -172,7 +165,7 @@ public class DashboardFragment extends Fragment {
                         .build();
 
                 MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
-                        .setTitleText("Select Target Date")
+                        .setTitleText(R.string.select_end_date)
                         .setCalendarConstraints(constraints)
                         .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
                         .build();
@@ -180,7 +173,7 @@ public class DashboardFragment extends Fragment {
                 datePicker.addOnPositiveButtonClickListener(selection -> {
                     selectedEndTime = selection;
                     SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-                    tvTargetDate.setText("Target: " + sdf.format(new Date(selection)));
+                    tvTargetDate.setText(getString(R.string.target_date_prefix, sdf.format(new Date(selection))));
                 });
                 datePicker.show(getParentFragmentManager(), "DATE_PICKER");
             });
@@ -190,24 +183,24 @@ public class DashboardFragment extends Fragment {
             btnSetGoal.setOnClickListener(v -> {
                 String text = etGoalAmount.getText().toString().trim();
                 if (text.isEmpty()) {
-                    etGoalAmount.setError("Required");
+                    etGoalAmount.setError(getString(R.string.required));
                     return;
                 }
                 if (selectedEndTime == -1) {
-                    Toast.makeText(getContext(), "Please select a target date", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), R.string.select_target_date, Toast.LENGTH_SHORT).show();
                     return;
                 }
                 try {
                     double goal = Double.parseDouble(text);
                     if (goal <= 0) {
-                        etGoalAmount.setError("Invalid amount");
+                        etGoalAmount.setError(getString(R.string.invalid_amount));
                         return;
                     }
                     viewModel.saveGoalAmount(goal, selectedEndTime);
                     scheduleDailyNotification();
-                    Toast.makeText(getContext(), "Goal set with deadline!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), R.string.goal_set_success, Toast.LENGTH_SHORT).show();
                 } catch (NumberFormatException e) {
-                    etGoalAmount.setError("Invalid amount");
+                    etGoalAmount.setError(getString(R.string.invalid_amount));
                 }
             });
         }
@@ -239,18 +232,18 @@ public class DashboardFragment extends Fragment {
         TextInputEditText etIncomeAmount = dialogView.findViewById(R.id.et_income_amount);
         MaterialButton btnAddSalary = dialogView.findViewById(R.id.btn_add_salary);
 
-        btnAddSalary.setText("Add Salary (" + currencyFormat.format(currentProfileSalary) + ")");
+        btnAddSalary.setText(getString(R.string.add_salary_format, currencyFormat.format(currentProfileSalary)));
 
         AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Add Income")
+                .setTitle(R.string.add_income)
                 .setView(dialogView)
-                .setPositiveButton("Add", (d, which) -> {
+                .setPositiveButton(R.string.add, (d, which) -> {
                     String amountStr = etIncomeAmount.getText().toString();
                     if (!amountStr.isEmpty()) {
                         addTransaction(Double.parseDouble(amountStr), "Manual Income", TransactionType.INCOME, "Income");
                     }
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.cancel, null)
                 .create();
 
         btnAddSalary.setOnClickListener(v -> {
@@ -285,12 +278,12 @@ public class DashboardFragment extends Fragment {
             }
         });
 
-        btnAddFixed.setText("Pay Fixed (" + currencyFormat.format(currentProfileFixedExpenses) + ")");
+        btnAddFixed.setText(getString(R.string.pay_fixed_format, currencyFormat.format(currentProfileFixedExpenses)));
 
         AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Add Expense")
+                .setTitle(R.string.add_expense)
                 .setView(dialogView)
-                .setPositiveButton("Add", (d, which) -> {
+                .setPositiveButton(R.string.add, (d, which) -> {
                     String amountStr = etExpenseAmount.getText().toString();
                     String category = spinnerCategory.getText().toString();
                     
@@ -304,7 +297,7 @@ public class DashboardFragment extends Fragment {
                         addTransaction(Double.parseDouble(amountStr), "Manual Expense", TransactionType.EXPENSE, category);
                     }
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.cancel, null)
                 .create();
 
         btnAddFixed.setOnClickListener(v -> {
@@ -384,7 +377,7 @@ public class DashboardFragment extends Fragment {
                 if (data.containsKey("goalEndTime")) {
                     selectedEndTime = Long.parseLong(String.valueOf(data.get("goalEndTime")));
                     SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-                    if (tvTargetDate != null) tvTargetDate.setText("Target: " + sdf.format(new Date(selectedEndTime)));
+                    if (tvTargetDate != null) tvTargetDate.setText(getString(R.string.target_date_prefix, sdf.format(new Date(selectedEndTime))));
                 }
                 if (data.containsKey("salary")) {
                     Object salaryObj = data.get("salary");
@@ -409,10 +402,10 @@ public class DashboardFragment extends Fragment {
         TextView tvChange = itemView.findViewById(R.id.tv_change);
 
         tvSymbol.setText(quote.getSymbol());
-        tvPrice.setText(String.format("$%.2f", quote.getCurrentPrice()));
+        tvPrice.setText(String.format(Locale.US, "$%.2f", quote.getCurrentPrice()));
         
         double percentChange = quote.getPercentChange();
-        tvChange.setText(String.format("%.2f%%", percentChange));
+        tvChange.setText(String.format(Locale.US, "%.2f%%", percentChange));
         
         if (percentChange < 0) {
             tvChange.setTextColor(ContextCompat.getColor(requireContext(), R.color.expense_red));
@@ -440,7 +433,7 @@ public class DashboardFragment extends Fragment {
                 double netSavings = currentBalance - startBalance;
                 int progress = (int) ((netSavings / goal) * 100);
                 if (progressGoal != null) progressGoal.setProgress(Math.max(0, Math.min(progress, 100)));
-                if (tvGoalProgress != null) tvGoalProgress.setText(Math.max(0, progress) + "% of Goal Achieved (Net Savings)");
+                if (tvGoalProgress != null) tvGoalProgress.setText(getString(R.string.goal_achieved_prefix, Math.max(0, progress)));
             }
         } catch (NumberFormatException ignored) {}
     }

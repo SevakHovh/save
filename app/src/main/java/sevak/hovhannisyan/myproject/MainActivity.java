@@ -1,5 +1,8 @@
 package sevak.hovhannisyan.myproject;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -13,6 +16,8 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.util.Locale;
+
 import dagger.hilt.android.AndroidEntryPoint;
 import sevak.hovhannisyan.myproject.R;
 
@@ -23,6 +28,21 @@ import sevak.hovhannisyan.myproject.R;
 public class MainActivity extends AppCompatActivity {
 
     private NavController navController;
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        SharedPreferences prefs = newBase.getSharedPreferences("Settings", Context.MODE_PRIVATE);
+        String lang = prefs.getString("My_Lang", "");
+        if (!lang.isEmpty()) {
+            Locale locale = new Locale(lang);
+            Locale.setDefault(locale);
+            Configuration config = new Configuration();
+            config.setLocale(locale);
+            super.attachBaseContext(newBase.createConfigurationContext(config));
+        } else {
+            super.attachBaseContext(newBase);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

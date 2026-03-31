@@ -23,20 +23,12 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="My SAVE"
+                android:text="@string/my_save"
                 android:textColor="@color/on_background"
                 android:textSize="24sp"
                 android:fontFamily="sans-serif-light"
                 android:letterSpacing="0.05" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_settings"
-                style="@style/Widget.Material3.Button.IconButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_alignParentEnd="true"
-                app:icon="@android:drawable/ic_menu_manage"
-                app:iconTint="@color/primary" />
         </RelativeLayout>
 
         <!-- Main Balance Card -->
@@ -175,7 +167,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Strategic Goal"
+                    android:text="@string/strategic_goal"
                     android:textColor="@color/on_surface"
                     android:textSize="18sp"
                     android:fontFamily="sans-serif-medium" />
@@ -186,7 +178,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:background="@null"
-                    android:hint="Target amount"
+                    android:hint="@string/target_amount"
                     android:inputType="numberDecimal"
                     android:textColor="@color/on_surface"
                     android:textColorHint="@color/outline"
@@ -197,7 +189,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Select End Date"
+                    android:text="@string/select_end_date"
                     android:textColor="@color/primary"
                     android:textSize="14sp"
                     android:clickable="true"
@@ -209,7 +201,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="end"
-                    android:text="Set Goal"
+                    android:text="@string/goal_set"
                     android:textColor="@color/primary" />
 
                 <View
@@ -258,7 +250,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Market Pulse"
+                    android:text="@string/market_pulse"
                     android:textColor="@color/on_surface"
                     android:textSize="16sp"
                     android:fontFamily="sans-serif-medium" />

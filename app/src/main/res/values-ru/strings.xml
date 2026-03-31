@@ -1,0 +1,145 @@
+<resources>
+    <string name="app_name">SAVE</string>
+
+    <!-- Навигация -->
+    <string name="nav_dashboard">Главная</string>
+    <string name="nav_profile">Профиль</string>
+    <string name="nav_ai_assistant">ИИ Помощник</string>
+
+    <!-- Главный экран -->
+    <string name="dashboard_title">Главная</string>
+    <string name="total_income">Общий доход</string>
+    <string name="total_expense">Общий расход</string>
+    <string name="balance">Баланс</string>
+    <string name="recent_transactions">Последние транзакции</string>
+    <string name="strategic_goal">Стратегическая цель</string>
+    <string name="target_amount">Целевая сумма</string>
+    <string name="select_end_date">Выберите дату завершения</string>
+    <string name="market_pulse">Пульс рынка</string>
+    <string name="goal_achieved_prefix">%d%% цели достигнуто (чистые сбережения)</string>
+    <string name="target_date_prefix">Цель: %s</string>
+    <string name="my_save">Мой SAVE</string>
+
+    <!-- Профиль -->
+    <string name="profile_title">Профиль</string>
+    <string name="financial_profile">Мой финансовый профиль</string>
+    <string name="financial_details">Финансовые подробности</string>
+    <string name="monthly_salary">Месячная зарплата</string>
+    <string name="fixed_expenses_label">Ежемесячные фиксированные расходы</string>
+    <string name="save_financial_info">Сохранить фин. инфо</string>
+    <string name="spending_overview">Обзор расходов</string>
+    <string name="sign_out">Выйти</string>
+    <string name="account_details_show">Данные аккаунта</string>
+    <string name="account_details_hide">Скрыть данные аккаунта</string>
+    <string name="financial_info_saved">Финансовая информация сохранена</string>
+    <string name="invalid_numbers">Некорректные числа</string>
+    <string name="no_expense_data">Нет данных о расходах</string>
+    <string name="categories">Категории</string>
+    <string name="add_transactions_stats">Добавьте транзакции, чтобы увидеть статистику</string>
+
+    <!-- ИИ Помощник -->
+    <string name="ai_assistant_title">ИИ Помощник</string>
+    <string name="ai_placeholder">Спросите меня о чем угодно в ваших финансах...</string>
+    <string name="send">Отправить</string>
+    <string name="ai_mode_intelligence">Режим интеллекта</string>
+    <string name="ai_mode_scanner">Сканер чеков</string>
+    <string name="ai_ask">Спросить ИИ</string>
+    <string name="ai_scan">Сканировать чек</string>
+    <string name="ai_online">SAVE AI онлайн. Нейронная связь установлена.</string>
+    <string name="ai_synchronizing">Синхронизация с нейронным ядром...</string>
+    <string name="ai_ledger_updated">Стратегический реестр успешно обновлен.</string>
+    <string name="ai_scanning_highres">Визуальное сканирование (выс. разр.)...</string>
+    <string name="ai_scanning_standard">Визуальное сканирование (стандарт)...</string>
+    <string name="ai_extraction_failed">Ошибка нейронного извлечения. Ответ: %s</string>
+    <string name="ai_scan_verified">Нейронное сканирование подтверждено:\nСумма: %s\nКатегория: %s\n\nСкажите \'save it\', чтобы записать.</string>
+    <string name="ai_intelligence_label">Интеллект</string>
+    <string name="ai_scanner_label">Сканер</string>
+
+    <!-- Настройки / Тема -->
+    <string name="settings">Настройки</string>
+    <string name="theme_title">Внешний вид</string>
+    <string name="theme_light">Светлая (Белый и Циан)</string>
+    <string name="theme_dark">Темная (Сланцевый и Циан)</string>
+    <string name="theme_system">Системная</string>
+    <string name="theme_dialog_title">Выберите тему</string>
+    <string name="change_theme">Изменить тему</string>
+
+    <string name="security_title">Безопасность</string>
+    <string name="reset_password">Сбросить пароль</string>
+    <string name="data_management">Управление данными</string>
+    <string name="clear_data">Очистить все транзакции</string>
+    <string name="preferences">Предпочтения</string>
+    <string name="notifications">Включить уведомления</string>
+    <string name="about_title">О приложении</string>
+    <string name="app_version">Версия 1.0.0</string>
+
+    <!-- Язык -->
+    <string name="language_title">Язык</string>
+    <string name="language_en">Английский</string>
+    <string name="language_ru">Русский</string>
+    <string name="language_dialog_title">Выберите язык</string>
+    <string name="change_language">Изменить язык</string>
+
+    <!-- Splash -->
+    <string name="splash_tagline">Умное планирование вашего будущего</string>
+
+    <!-- Цель накопления -->
+    <string name="goal_title">Цель накопления</string>
+    <string name="goal_hint">Введите сумму, которую хотите накопить (напр. 500)</string>
+    <string name="goal_set">Установить цель</string>
+    <string name="goal_daily_prefix">Вам следует откладывать </string>
+    <string name="goal_daily_suffix"> в день, чтобы достичь цели.</string>
+    <string name="goal_progress_prefix">Прогресс: </string>
+    <string name="goal_progress_suffix"> от вашей цели накоплено.</string>
+    <string name="strategic_goal_prefix">Стратегическая цель: %s</string>
+    <string name="goal_daily_format">Откладывайте %s / день</string>
+    <string name="goal_remaining_format">Осталось %s</string>
+    <string name="goal_total_saved_format">Всего накоплено: %s</string>
+    <string name="goal_reached">Цель достигнута или дней не осталось!</string>
+    <string name="today_goal_completed">Сегодняшняя цель достигнута!</string>
+    <string name="quick_save">Быстрое сохранение</string>
+    <string name="custom_save">Своя сумма</string>
+    <string name="select_no_save_days">Выбрать дни без накоплений</string>
+    <string name="excluded_info">Нажмите на дату, чтобы исключить её из плана накоплений.</string>
+    <string name="set_new_goal">Установить новую цель / сроки</string>
+
+    <!-- Финансовые тренды -->
+    <string name="financial_trends">Финансовые тренды</string>
+    <string name="chip_day">День</string>
+    <string name="chip_week">Неделя</string>
+    <string name="chip_month">Месяц</string>
+    <string name="chip_year">Год</string>
+    <string name="income_histogram">Гистограмма доходов</string>
+    <string name="spending_histogram">Гистограмма расходов</string>
+    <string name="cash_flow">Денежный поток</string>
+    <string name="income">Доход</string>
+    <string name="expenses">Расходы</string>
+
+    <!-- Market Pulse Details -->
+    <string name="market_open">Откр</string>
+    <string name="market_high">Макс</string>
+    <string name="market_low">Мин</string>
+    <string name="market_prev_close">Пред закр</string>
+    <string name="market_volume">Объем</string>
+    <string name="market_change">Изм</string>
+
+    <!-- Рыночные показатели -->
+    <string name="market_watch">Рынок</string>
+
+    <!-- Общие действия -->
+    <string name="add_transaction">Добавить транзакцию</string>
+    <string name="no_transactions">Пока нет транзакций</string>
+    <string name="nav_transactions">Транзакции</string>
+    <string name="transactions_title">Транзакции</string>
+    <string name="add_income">Добавить доход</string>
+    <string name="add_expense">Добавить расход</string>
+    <string name="add_salary_format">Добавить зарплату (%s)</string>
+    <string name="pay_fixed_format">Оплатить фикс. расходы (%s)</string>
+    <string name="cancel">Отмена</string>
+    <string name="add">Добавить</string>
+    <string name="required">Обязательно</string>
+    <string name="invalid_amount">Неверная сумма</string>
+    <string name="select_target_date">Пожалуйста, выберите дату</string>
+    <string name="goal_set_success">Цель установлена!</string>
+
+</resources>

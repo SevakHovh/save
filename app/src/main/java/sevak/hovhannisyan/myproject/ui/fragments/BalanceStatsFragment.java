@@ -49,7 +49,7 @@ public class BalanceStatsFragment extends Fragment {
 
     private MainViewModel viewModel;
     private LineChart lineChart;
-    private BarChart barChart;
+    private BarChart barChartIncome, barChartExpense;
     private ChipGroup chipGroupTime;
     private ImageButton btnBack;
     
@@ -68,14 +68,16 @@ public class BalanceStatsFragment extends Fragment {
         viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         lineChart = view.findViewById(R.id.line_chart);
-        barChart = view.findViewById(R.id.bar_chart);
+        barChartIncome = view.findViewById(R.id.bar_chart_income);
+        barChartExpense = view.findViewById(R.id.bar_chart_expense);
         chipGroupTime = view.findViewById(R.id.chip_group_time);
         btnBack = view.findViewById(R.id.btn_back);
 
         btnBack.setOnClickListener(v -> Navigation.findNavController(v).navigateUp());
 
         setupLineChartStyle();
-        setupBarChartStyle();
+        setupBarChartStyle(barChartIncome, R.color.income_green);
+        setupBarChartStyle(barChartExpense, R.color.expense_red);
         setupChips();
         observeTransactions();
     }
@@ -96,20 +98,20 @@ public class BalanceStatsFragment extends Fragment {
         leftAxis.setDrawZeroLine(true);
     }
 
-    private void setupBarChartStyle() {
-        barChart.getDescription().setEnabled(false);
-        barChart.setDrawGridBackground(false);
-        barChart.getAxisRight().setEnabled(false);
-        barChart.getLegend().setEnabled(false);
-        barChart.setDrawBarShadow(false);
-        barChart.setDrawValueAboveBar(true);
+    private void setupBarChartStyle(BarChart chart, int colorRes) {
+        chart.getDescription().setEnabled(false);
+        chart.setDrawGridBackground(false);
+        chart.getAxisRight().setEnabled(false);
+        chart.getLegend().setEnabled(false);
+        chart.setDrawBarShadow(false);
+        chart.setDrawValueAboveBar(true);
 
-        XAxis xAxis = barChart.getXAxis();
+        XAxis xAxis = chart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
         xAxis.setGranularity(1f);
 
-        YAxis leftAxis = barChart.getAxisLeft();
+        YAxis leftAxis = chart.getAxisLeft();
         leftAxis.setDrawGridLines(true);
         leftAxis.setAxisMinimum(0f);
     }
@@ -185,9 +187,10 @@ public class BalanceStatsFragment extends Fragment {
             }
         }
 
-        List<Entry> incomeEntries = new ArrayList<>();
-        List<Entry> expenseEntries = new ArrayList<>();
-        List<BarEntry> barEntries = new ArrayList<>();
+        List<Entry> incomeLineEntries = new ArrayList<>();
+        List<Entry> expenseLineEntries = new ArrayList<>();
+        List<BarEntry> incomeBarEntries = new ArrayList<>();
+        List<BarEntry> expenseBarEntries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
 
         List<Long> allKeys = new ArrayList<>(incomeData.keySet());
@@ -201,9 +204,10 @@ public class BalanceStatsFragment extends Fragment {
             double inc = incomeData.getOrDefault(key, 0.0);
             double exp = expenseData.getOrDefault(key, 0.0);
             
-            incomeEntries.add(new Entry(i, (float) inc));
-            expenseEntries.add(new Entry(i, (float) exp));
-            barEntries.add(new BarEntry(i, (float) exp));
+            incomeLineEntries.add(new Entry(i, (float) inc));
+            expenseLineEntries.add(new Entry(i, (float) exp));
+            incomeBarEntries.add(new BarEntry(i, (float) inc));
+            expenseBarEntries.add(new BarEntry(i, (float) exp));
             labels.add(sdf.format(new Date(key)));
         }
 
@@ -216,26 +220,34 @@ public class BalanceStatsFragment extends Fragment {
         };
 
         lineChart.getXAxis().setValueFormatter(formatter);
-        barChart.getXAxis().setValueFormatter(formatter);
+        barChartIncome.getXAxis().setValueFormatter(formatter);
+        barChartExpense.getXAxis().setValueFormatter(formatter);
 
         // Line Chart Data
-        LineDataSet incomeSet = createLineDataSet(incomeEntries, "Income", ContextCompat.getColor(requireContext(), R.color.income_green));
-        LineDataSet expenseSet = createLineDataSet(expenseEntries, "Expenses", ContextCompat.getColor(requireContext(), R.color.expense_red));
+        LineDataSet incomeSet = createLineDataSet(incomeLineEntries, "Income", ContextCompat.getColor(requireContext(), R.color.income_green));
+        LineDataSet expenseSet = createLineDataSet(expenseLineEntries, "Expenses", ContextCompat.getColor(requireContext(), R.color.expense_red));
         lineChart.setData(new LineData(incomeSet, expenseSet));
         lineChart.animateY(1000);
         lineChart.invalidate();
 
-        // Bar Chart Data (Histogram)
-        BarDataSet barDataSet = new BarDataSet(barEntries, "Expenses");
-        barDataSet.setColor(ContextCompat.getColor(requireContext(), R.color.expense_red));
-        barDataSet.setDrawValues(true);
-        barDataSet.setValueTextSize(10f);
+        // Income Bar Chart
+        updateBarChart(barChartIncome, incomeBarEntries, R.color.income_green);
         
-        BarData barData = new BarData(barDataSet);
-        barChart.setData(barData);
-        barChart.setFitBars(true);
-        barChart.animateY(1000);
-        barChart.invalidate();
+        // Expense Bar Chart
+        updateBarChart(barChartExpense, expenseBarEntries, R.color.expense_red);
+    }
+
+    private void updateBarChart(BarChart chart, List<BarEntry> entries, int colorRes) {
+        BarDataSet set = new BarDataSet(entries, chart == barChartIncome ? "Income" : "Expenses");
+        set.setColor(ContextCompat.getColor(requireContext(), colorRes));
+        set.setDrawValues(true);
+        set.setValueTextSize(10f);
+        
+        BarData data = new BarData(set);
+        chart.setData(data);
+        chart.setFitBars(true);
+        chart.animateY(1000);
+        chart.invalidate();
     }
 
     private LineDataSet createLineDataSet(List<Entry> entries, String label, int color) {

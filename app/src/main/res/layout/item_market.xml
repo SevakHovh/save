@@ -83,7 +83,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Open"
+                    android:text="@string/market_open"
                     android:textSize="10sp"
                     android:textAllCaps="true" />
                 <TextView
@@ -105,7 +105,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="High"
+                    android:text="@string/market_high"
                     android:textSize="10sp"
                     android:textAllCaps="true" />
                 <TextView
@@ -127,7 +127,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Low"
+                    android:text="@string/market_low"
                     android:textSize="10sp"
                     android:textAllCaps="true" />
                 <TextView
@@ -150,7 +150,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Prev Close"
+                    android:text="@string/market_prev_close"
                     android:textSize="10sp"
                     android:textAllCaps="true" />
                 <TextView
@@ -173,7 +173,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Volume"
+                    android:text="@string/market_volume"
                     android:textSize="10sp"
                     android:textAllCaps="true" />
                 <TextView
@@ -196,7 +196,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Change"
+                    android:text="@string/market_change"
                     android:textSize="10sp"
                     android:textAllCaps="true" />
                 <TextView

@@ -1,0 +1,146 @@
+<resources>
+    <string name="app_name">SAVE</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Գլխավոր</string>
+    <string name="nav_profile">Պրոֆիլ</string>
+    <string name="nav_ai_assistant">AI Օգնական</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Գլխավոր</string>
+    <string name="total_income">Ընդհանուր եկամուտ</string>
+    <string name="total_expense">Ընդհանուր ծախս</string>
+    <string name="balance">Հաշվեկշիռ</string>
+    <string name="recent_transactions">Վերջին գործարքները</string>
+    <string name="strategic_goal">Ռազմավարական նպատակ</string>
+    <string name="target_amount">Թիրախային գումար</string>
+    <string name="select_end_date">Ընտրեք ավարտի ամսաթիվը</string>
+    <string name="market_pulse">Շուկայի զարկերակը</string>
+    <string name="goal_achieved_prefix">Նպատակի %d%%-ը իրականացված է (զուտ խնայողություններ)</string>
+    <string name="target_date_prefix">Թիրախ՝ %s</string>
+    <string name="my_save">Իմ SAVE-ը</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Պրոֆիլ</string>
+    <string name="financial_profile">Իմ ֆինանսական պրոֆիլը</string>
+    <string name="financial_details">Ֆինանսական մանրամասներ</string>
+    <string name="monthly_salary">Ամսական աշխատավարձ</string>
+    <string name="fixed_expenses_label">Ամսական հաստատուն ծախսեր</string>
+    <string name="save_financial_info">Պահպանել ֆինանսական տվյալները</string>
+    <string name="spending_overview">Ծախսերի տեսություն</string>
+    <string name="sign_out">Դուրս գալ</string>
+    <string name="account_details_show">Հաշվի մանրամասները</string>
+    <string name="account_details_hide">Թաքցնել հաշվի մանրամասները</string>
+    <string name="financial_info_saved">Ֆինանսական տվյալները պահպանված են</string>
+    <string name="invalid_numbers">Անվավեր թվեր</string>
+    <string name="no_expense_data">Ծախսերի վերաբերյալ տվյալներ չկան</string>
+    <string name="categories">Կատեգորիաներ</string>
+    <string name="add_transactions_stats">Ավելացրեք գործարքներ՝ վիճակագրությունը տեսնելու համար</string>
+
+    <!-- AI Assistant -->
+    <string name="ai_assistant_title">AI Օգնական</string>
+    <string name="ai_placeholder">Հարցրեք ինձ ինչ-որ բան ձեր ֆինանսների մասին...</string>
+    <string name="send">Ուղարկել</string>
+    <string name="ai_mode_intelligence">Ինտելեկտուալ ռեժիմ</string>
+    <string name="ai_mode_scanner">Անդորրագրերի սկաներ</string>
+    <string name="ai_ask">Հարցնել AI-ին</string>
+    <string name="ai_scan">Սկանավորել հաշիվը</string>
+    <string name="ai_online">SAVE AI-ն առցանց է։ Նեյրոնային կապը հաստատված է:</string>
+    <string name="ai_synchronizing">Սինխրոնացում նեյրոնային միջուկի հետ...</string>
+    <string name="ai_ledger_updated">Ռազմավարական մատյանը հաջողությամբ թարմացվել է:</string>
+    <string name="ai_scanning_highres">Վիզուալ սկանավորում (High-Res)...</string>
+    <string name="ai_scanning_standard">Վիզուալ սկանավորում (Standard)...</string>
+    <string name="ai_extraction_failed">Նեյրոնային արդյունահանումը ձախողվեց: Պատասխան՝ %s</string>
+    <string name="ai_scan_verified">Նեյրոնային սկանավորումը հաստատված է․\nԳումար՝ %s\nԿատեգորիա՝ %s\n\nԱսեք «save it»՝ սա գրանցելու համար:</string>
+    <string name="ai_intelligence_label">Ինտելեկտ</string>
+    <string name="ai_scanner_label">Սկաներ</string>
+
+    <!-- Settings / Theme -->
+    <string name="settings">Կարգավորումներ</string>
+    <string name="theme_title">Արտաքին տեսք</string>
+    <string name="theme_light">Լուսավոր (Սպիտակ և Սիան)</string>
+    <string name="theme_dark">Մութ (Մուգ մոխրագույն և Սիան)</string>
+    <string name="theme_system">Համակարգային</string>
+    <string name="theme_dialog_title">Ընտրեք թեման</string>
+    <string name="change_theme">Փոխել թեման</string>
+
+    <string name="security_title">Անվտանգություն</string>
+    <string name="reset_password">Վերականգնել գաղտնաբառը</string>
+    <string name="data_management">Տվյալների կառավարում</string>
+    <string name="clear_data">Ջնջել բոլոր գործարքները</string>
+    <string name="preferences">Նախապատվություններ</string>
+    <string name="notifications">Միացնել ծանուցումները</string>
+    <string name="about_title">Հավելվածի մասին</string>
+    <string name="app_version">Տարբերակ 1.0.0</string>
+
+    <!-- Language -->
+    <string name="language_title">Լեզու</string>
+    <string name="language_en">Անգլերեն</string>
+    <string name="language_ru">Ռուսերեն (Русский)</string>
+    <string name="language_hy">Հայերեն (Հայերեն)</string>
+    <string name="language_dialog_title">Ընտրեք լեզուն</string>
+    <string name="change_language">Փոխել լեզուն</string>
+
+    <!-- Splash -->
+    <string name="splash_tagline">Խելացի բյուջետավորում ձեր ապագայի համար</string>
+
+    <!-- Saving Goal -->
+    <string name="goal_title">Խնայողության նպատակ</string>
+    <string name="goal_hint">Մուտքագրեք որքան եք ցանկանում խնայել (օրինակ՝ 500)</string>
+    <string name="goal_set">Սահմանել նպատակ</string>
+    <string name="goal_daily_prefix">Դուք պետք է խնայեք </string>
+    <string name="goal_daily_suffix"> օրական՝ ձեր նպատակին հասնելու համար:</string>
+    <string name="goal_progress_prefix">Առաջընթաց՝ </string>
+    <string name="goal_progress_suffix"> խնայված է ձեր նպատակից:</string>
+    <string name="strategic_goal_prefix">Ռազմավարական նպատակ՝ %s</string>
+    <string name="goal_daily_format">Խնայել %s / օր</string>
+    <string name="goal_remaining_format">Մնացել է %s</string>
+    <string name="goal_total_saved_format">Ընդհանուր խնայված՝ %s</string>
+    <string name="goal_reached">Թիրախը հասված է կամ օրեր չեն մնացել:</string>
+    <string name="today_goal_completed">Այսօրվա նպատակը կատարված է:</string>
+    <string name="quick_save">Արագ խնայում</string>
+    <string name="custom_save">Այլ գումար</string>
+    <string name="select_no_save_days">Ընտրեք «Չխնայելու» օրերը</string>
+    <string name="excluded_info">Սեղմեք ամսաթվի վրա՝ այն ձեր խնայողությունների պլանից բացառելու համար:</string>
+    <string name="set_new_goal">Սահմանել նոր նպատակ / ժամկետ</string>
+
+    <!-- Financial Trends -->
+    <string name="financial_trends">Ֆինանսական միտումներ</string>
+    <string name="chip_day">Օր</string>
+    <string name="chip_week">Շաբաթ</string>
+    <string name="chip_month">Ամիս</string>
+    <string name="chip_year">Տարի</string>
+    <string name="income_histogram">Եկամուտների հիստոգրամ</string>
+    <string name="spending_histogram">Ծախսերի հիստոգրամ</string>
+    <string name="cash_flow">Դրամական հոսքեր</string>
+    <string name="income">Եկամուտ</string>
+    <string name="expenses">Ծախսեր</string>
+
+    <!-- Market Pulse Details -->
+    <string name="market_open">Բացում</string>
+    <string name="market_high">Առավելագույն</string>
+    <string name="market_low">Նվազագույն</string>
+    <string name="market_prev_close">Նախորդ փակում</string>
+    <string name="market_volume">Ծավալ</string>
+    <string name="market_change">Փոփոխություն</string>
+
+    <!-- Market Watch -->
+    <string name="market_watch">Շուկայի դիտում</string>
+
+    <!-- Common Actions -->
+    <string name="add_transaction">Ավելացնել գործարք</string>
+    <string name="no_transactions">Դեռևս գործարքներ չկան</string>
+    <string name="nav_transactions">Գործարքներ</string>
+    <string name="transactions_title">Գործարքներ</string>
+    <string name="add_income">Ավելացնել եկամուտ</string>
+    <string name="add_expense">Ավելացնել ծախս</string>
+    <string name="add_salary_format">Ավելացնել աշխատավարձ (%s)</string>
+    <string name="pay_fixed_format">Վճարել հաստատուն (%s)</string>
+    <string name="cancel">Չեղարկել</string>
+    <string name="add">Ավելացնել</string>
+    <string name="required">Պարտադիր է</string>
+    <string name="invalid_amount">Անվավեր գումար</string>
+    <string name="select_target_date">Խնդրում ենք ընտրել թիրախային ամսաթիվ</string>
+    <string name="goal_set_success">Նպատակը սահմանված է ժամկետով:</string>
+
+</resources>

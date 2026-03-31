@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
 
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.data.PieData;
@@ -43,6 +44,9 @@ public class ProfileFragment extends Fragment {
     private TextInputEditText etSalary;
     private TextInputEditText etFixedExpenses;
     private MaterialButton btnSaveFinancialInfo;
+    private MaterialButton btnSettings;
+    private MaterialButton btnPersonalInfo;
+    private View layoutPersonalInfo;
 
     @Nullable
     @Override
@@ -62,12 +66,33 @@ public class ProfileFragment extends Fragment {
         etSalary = view.findViewById(R.id.et_salary);
         etFixedExpenses = view.findViewById(R.id.et_fixed_expenses);
         btnSaveFinancialInfo = view.findViewById(R.id.btn_save_financial_info);
+        btnSettings = view.findViewById(R.id.btn_settings_profile);
+        btnPersonalInfo = view.findViewById(R.id.btn_personal_info);
+        layoutPersonalInfo = view.findViewById(R.id.layout_personal_info);
 
         observeFinancialInfo();
         setupPieChart();
         observeTransactions();
 
         btnSaveFinancialInfo.setOnClickListener(v -> saveFinancialInfo());
+        
+        if (btnSettings != null) {
+            btnSettings.setOnClickListener(v -> {
+                Navigation.findNavController(v).navigate(R.id.settingsFragment);
+            });
+        }
+
+        if (btnPersonalInfo != null) {
+            btnPersonalInfo.setOnClickListener(v -> {
+                if (layoutPersonalInfo.getVisibility() == View.VISIBLE) {
+                    layoutPersonalInfo.setVisibility(View.GONE);
+                    btnPersonalInfo.setText(R.string.account_details_show);
+                } else {
+                    layoutPersonalInfo.setVisibility(View.VISIBLE);
+                    btnPersonalInfo.setText(R.string.account_details_hide);
+                }
+            });
+        }
     }
 
     private void observeFinancialInfo() {
@@ -91,9 +116,9 @@ public class ProfileFragment extends Fragment {
             double expenses = expensesStr.isEmpty() ? 0 : Double.parseDouble(expensesStr);
 
             viewModel.saveUserFinancialData(salary, expenses);
-            Toast.makeText(requireContext(), "Financial info saved to cloud!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), R.string.financial_info_saved, Toast.LENGTH_SHORT).show();
         } catch (NumberFormatException e) {
-            Toast.makeText(requireContext(), "Please enter valid numbers", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), R.string.invalid_numbers, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -111,7 +136,7 @@ public class ProfileFragment extends Fragment {
         
         pieChart.setEntryLabelColor(labelColor);
         pieChart.setEntryLabelTextSize(12f);
-        pieChart.setCenterText("Expenses");
+        pieChart.setCenterText(getString(R.string.spending_overview));
         pieChart.setCenterTextColor(labelColor);
         pieChart.setCenterTextSize(18f);
         pieChart.setHoleRadius(58f);
@@ -144,7 +169,7 @@ public class ProfileFragment extends Fragment {
         if (!hasExpenses) {
             pieChart.setVisibility(View.GONE);
             tvNoStats.setVisibility(View.VISIBLE);
-            tvNoStats.setText("No expense data to display");
+            tvNoStats.setText(R.string.no_expense_data);
             return;
         }
 
@@ -156,7 +181,7 @@ public class ProfileFragment extends Fragment {
             entries.add(new PieEntry(entry.getValue().floatValue(), entry.getKey()));
         }
 
-        PieDataSet dataSet = new PieDataSet(entries, "Categories");
+        PieDataSet dataSet = new PieDataSet(entries, getString(R.string.categories));
         dataSet.setSliceSpace(3f);
         dataSet.setSelectionShift(5f);
 

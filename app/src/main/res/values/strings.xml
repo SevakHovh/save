@@ -12,15 +12,48 @@
     <string name="total_expense">Total Expense</string>
     <string name="balance">Balance</string>
     <string name="recent_transactions">Recent Transactions</string>
-    
+    <string name="strategic_goal">Strategic Goal</string>
+    <string name="target_amount">Target amount</string>
+    <string name="select_end_date">Select End Date</string>
+    <string name="market_pulse">Market Pulse</string>
+    <string name="goal_achieved_prefix">%d%% of Goal Achieved (Net Savings)</string>
+    <string name="target_date_prefix">Target: %s</string>
+    <string name="my_save">My SAVE</string>
+
     <!-- Profile -->
     <string name="profile_title">Profile</string>
+    <string name="financial_profile">My Financial Profile</string>
+    <string name="financial_details">Financial Details</string>
+    <string name="monthly_salary">Monthly Salary</string>
+    <string name="fixed_expenses_label">Monthly Fixed Expenses</string>
+    <string name="save_financial_info">Save Financial Info</string>
+    <string name="spending_overview">Spending Overview</string>
     <string name="sign_out">Sign Out</string>
-    
+    <string name="account_details_show">Account Details</string>
+    <string name="account_details_hide">Hide Account Details</string>
+    <string name="financial_info_saved">Financial Info Saved</string>
+    <string name="invalid_numbers">Invalid numbers</string>
+    <string name="no_expense_data">No expense data available</string>
+    <string name="categories">Categories</string>
+    <string name="add_transactions_stats">Add transactions to see statistics</string>
+
     <!-- AI Assistant -->
     <string name="ai_assistant_title">AI Assistant</string>
     <string name="ai_placeholder">Ask me anything about your finances...</string>
     <string name="send">Send</string>
+    <string name="ai_mode_intelligence">Intelligence Mode</string>
+    <string name="ai_mode_scanner">Receipt Scanner</string>
+    <string name="ai_ask">Ask AI</string>
+    <string name="ai_scan">Scan Bill</string>
+    <string name="ai_online">SAVE AI Online. Neural link secured.</string>
+    <string name="ai_synchronizing">Synchronizing with Neural Core...</string>
+    <string name="ai_ledger_updated">Strategic ledger updated successfully.</string>
+    <string name="ai_scanning_highres">Visual Scanning (High-Res)...</string>
+    <string name="ai_scanning_standard">Visual Scanning (Standard)...</string>
+    <string name="ai_extraction_failed">Neural extraction failed. Response: %s</string>
+    <string name="ai_scan_verified">Neural Scan Verified:\nAmount: %s\nCategory: %s\n\nSay \'save it\' to log this.</string>
+    <string name="ai_intelligence_label">Intelligence</string>
+    <string name="ai_scanner_label">Scanner</string>
 
     <!-- Settings / Theme -->
     <string name="settings">Settings</string>
@@ -29,7 +62,8 @@
     <string name="theme_dark">Dark (Deep Slate &amp; Cyan)</string>
     <string name="theme_system">System Default</string>
     <string name="theme_dialog_title">Choose theme</string>
-    
+    <string name="change_theme">Change Theme</string>
+
     <string name="security_title">Security</string>
     <string name="reset_password">Reset Password</string>
     <string name="data_management">Data Management</string>
@@ -38,6 +72,14 @@
     <string name="notifications">Enable Notifications</string>
     <string name="about_title">About</string>
     <string name="app_version">Version 1.0.0</string>
+
+    <!-- Language -->
+    <string name="language_title">Language</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Russian (Русский)</string>
+    <string name="language_hy">Armenian (Հայերեն)</string>
+    <string name="language_dialog_title">Choose language</string>
+    <string name="change_language">Change Language</string>
 
     <!-- Splash -->
     <string name="splash_tagline">Smart budgeting for your future</string>
@@ -50,6 +92,37 @@
     <string name="goal_daily_suffix"> per day to reach your goal.</string>
     <string name="goal_progress_prefix">Progress: </string>
     <string name="goal_progress_suffix"> of your goal saved.</string>
+    <string name="strategic_goal_prefix">Strategic Goal: %s</string>
+    <string name="goal_daily_format">Save %s / day</string>
+    <string name="goal_remaining_format">%s to go</string>
+    <string name="goal_total_saved_format">%s total saved</string>
+    <string name="goal_reached">Target reached or no days left!</string>
+    <string name="today_goal_completed">Today\'s goal completed!</string>
+    <string name="quick_save">Quick Save</string>
+    <string name="custom_save">Custom Save</string>
+    <string name="select_no_save_days">Select \'No-Save\' Days</string>
+    <string name="excluded_info">Tap a date to exclude it from your savings plan (e.g., bills due).</string>
+    <string name="set_new_goal">Set New Goal / Timeline</string>
+
+    <!-- Financial Trends -->
+    <string name="financial_trends">Financial Trends</string>
+    <string name="chip_day">Day</string>
+    <string name="chip_week">Week</string>
+    <string name="chip_month">Month</string>
+    <string name="chip_year">Year</string>
+    <string name="income_histogram">Income Histogram</string>
+    <string name="spending_histogram">Spending Histogram</string>
+    <string name="cash_flow">Cash Flow</string>
+    <string name="income">Income</string>
+    <string name="expenses">Expenses</string>
+
+    <!-- Market Pulse Details -->
+    <string name="market_open">Open</string>
+    <string name="market_high">High</string>
+    <string name="market_low">Low</string>
+    <string name="market_prev_close">Prev Close</string>
+    <string name="market_volume">Volume</string>
+    <string name="market_change">Change</string>
 
     <!-- Market Watch -->
     <string name="market_watch">Market Watch</string>
@@ -59,5 +132,15 @@
     <string name="no_transactions">No transactions yet</string>
     <string name="nav_transactions">Transactions</string>
     <string name="transactions_title">Transactions</string>
+    <string name="add_income">Add Income</string>
+    <string name="add_expense">Add Expense</string>
+    <string name="add_salary_format">Add Salary (%s)</string>
+    <string name="pay_fixed_format">Pay Fixed (%s)</string>
+    <string name="cancel">Cancel</string>
+    <string name="add">Add</string>
+    <string name="required">Required</string>
+    <string name="invalid_amount">Invalid amount</string>
+    <string name="select_target_date">Please select a target date</string>
+    <string name="goal_set_success">Goal set with deadline!</string>
 
 </resources>

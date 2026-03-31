@@ -121,7 +121,7 @@ public class AiAssistantFragment extends Fragment {
         rvChatMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvChatMessages.setAdapter(chatAdapter);
 
-        chatAdapter.addMessage(new ChatMessage("SAVE AI Online. Neural link secured.", false));
+        chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_online), false));
 
         observeData();
         setupButtons();
@@ -130,10 +130,10 @@ public class AiAssistantFragment extends Fragment {
     private void setupButtons() {
         btnAiMode.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(requireContext(), btnAiMode);
-            popup.getMenu().add("Intelligence Mode");
-            popup.getMenu().add("Receipt Scanner");
+            popup.getMenu().add(getString(R.string.ai_mode_intelligence));
+            popup.getMenu().add(getString(R.string.ai_mode_scanner));
             popup.setOnMenuItemClickListener(item -> {
-                if (item.getTitle().equals("Intelligence Mode")) {
+                if (item.getTitle().equals(getString(R.string.ai_mode_intelligence))) {
                     setAiMode(AiMode.REGULAR);
                 } else {
                     setAiMode(AiMode.BILL_DETECTOR);
@@ -155,15 +155,15 @@ public class AiAssistantFragment extends Fragment {
     private void setAiMode(AiMode mode) {
         currentMode = mode;
         if (mode == AiMode.REGULAR) {
-            btnAiMode.setText("Intelligence");
+            btnAiMode.setText(R.string.ai_intelligence_label);
             btnAiMode.setIconResource(android.R.drawable.ic_menu_info_details);
             etUserInput.setVisibility(View.VISIBLE);
-            btnSend.setText("Ask AI");
+            btnSend.setText(R.string.ai_ask);
         } else {
-            btnAiMode.setText("Scanner");
+            btnAiMode.setText(R.string.ai_scanner_label);
             btnAiMode.setIconResource(android.R.drawable.ic_menu_camera);
             etUserInput.setVisibility(View.GONE);
-            btnSend.setText("Scan Bill");
+            btnSend.setText(R.string.ai_scan);
         }
     }
 
@@ -179,7 +179,7 @@ public class AiAssistantFragment extends Fragment {
             return;
         }
 
-        chatAdapter.addMessage(new ChatMessage("Synchronizing with Neural Core...", false));
+        chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_synchronizing), false));
         rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
 
         runMainBrain(userInput, INTELLIGENCE_MODEL);
@@ -196,7 +196,7 @@ public class AiAssistantFragment extends Fragment {
         viewModel.insertTransaction(t);
         
         lastDetectedPrice = 0.0;
-        chatAdapter.addMessage(new ChatMessage("Strategic ledger updated successfully.", false));
+        chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_ledger_updated), false));
         rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
     }
 
@@ -231,7 +231,7 @@ public class AiAssistantFragment extends Fragment {
             "CURRENT STATUS: [Date: %s] [Balance: %.2f] [Total Inc: %.2f] [Total Exp: %.2f]\n" +
             "USER PROFILE: %s\n" +
             "%s\n" +
-            "Analyze the user's data and provide accurate, personalized financial advice. Be concise but insightful.",
+            "Analyze the user's data and provide accurate, personalized financial advice. Be concise but insightful. Respond in the user's language if possible (English or Russian).",
             dateStr, currentBalance, currentIncome, currentExpense, userContext, historyBuilder.toString());
         
         List<OpenRouterRequest.Message> messages = new ArrayList<>();
@@ -301,9 +301,9 @@ public class AiAssistantFragment extends Fragment {
 
     private void processBillWithAi(Uri uri, String modelId) {
         if (modelId.equals(VISION_MODEL)) {
-            chatAdapter.addMessage(new ChatMessage("Visual Scanning (High-Res)...", false));
+            chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_scanning_highres), false));
         } else {
-            chatAdapter.addMessage(new ChatMessage("Visual Scanning (Standard)...", false));
+            chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_scanning_standard), false));
         }
         rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
         
@@ -369,12 +369,11 @@ public class AiAssistantFragment extends Fragment {
                 lastDetectedPrice = json.optDouble("total", 0.0);
                 lastDetectedCategory = json.optString("category", "Unknown");
                 
-                String message = "Neural Scan Verified:\nAmount: " + currencyFormat.format(lastDetectedPrice) + 
-                                "\nCategory: " + lastDetectedCategory + "\n\nSay 'save it' to log this.";
+                String message = getString(R.string.ai_scan_verified, currencyFormat.format(lastDetectedPrice), lastDetectedCategory);
                 chatAdapter.addMessage(new ChatMessage(message, false));
                 rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
             } catch (Exception e) {
-                chatAdapter.addMessage(new ChatMessage("Neural extraction failed. Response: " + content, false));
+                chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_extraction_failed, content), false));
                 rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
             }
         });

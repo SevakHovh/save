@@ -1,5 +1,8 @@
 package sevak.hovhannisyan.myproject;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.View;
@@ -8,7 +11,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -47,12 +49,28 @@ public class GoalActivity extends AppCompatActivity {
     private double currentDailyRequirement = 0.0;
 
     @Override
+    protected void attachBaseContext(Context newBase) {
+        SharedPreferences prefs = newBase.getSharedPreferences("Settings", Context.MODE_PRIVATE);
+        String lang = prefs.getString("My_Lang", "");
+        if (!lang.isEmpty()) {
+            Locale locale = new Locale(lang);
+            Locale.setDefault(locale);
+            Configuration config = new Configuration();
+            config.setLocale(locale);
+            super.attachBaseContext(newBase.createConfigurationContext(config));
+        } else {
+            super.attachBaseContext(newBase);
+        }
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_goal);
 
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
-        currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault());
+        // Using US locale for currency to ensure dollar sign stays consistent as per user request
+        currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
 
         initViews();
         observeViewModel();
@@ -122,12 +140,12 @@ public class GoalActivity extends AppCompatActivity {
     private void showCustomSaveDialog() {
         TextInputEditText etAmount = new TextInputEditText(this);
         etAmount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        etAmount.setHint("Enter amount");
+        etAmount.setHint(R.string.goal_hint);
 
         new MaterialAlertDialogBuilder(this)
-                .setTitle("Custom Save")
+                .setTitle(R.string.custom_save)
                 .setView(etAmount)
-                .setPositiveButton("Save", (dialog, which) -> {
+                .setPositiveButton(R.string.add, (dialog, which) -> {
                     String val = etAmount.getText().toString();
                     if (!val.isEmpty()) {
                         double amount = Double.parseDouble(val);
@@ -137,7 +155,7 @@ public class GoalActivity extends AppCompatActivity {
                         }
                     }
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.cancel, null)
                 .show();
     }
 
@@ -182,7 +200,7 @@ public class GoalActivity extends AppCompatActivity {
                     }
                 }
 
-                tvGoalTitle.setText("Strategic Goal: " + currencyFormat.format(goal));
+                tvGoalTitle.setText(getString(R.string.strategic_goal_prefix, currencyFormat.format(goal)));
                 updateUI(goal, startBalance, viewModel.getBalance().getValue() != null ? viewModel.getBalance().getValue() : 0.0, endTime);
             }
         });
@@ -204,8 +222,8 @@ public class GoalActivity extends AppCompatActivity {
         double netSavings = Math.max(0, currentBalance - startBalance);
         double remaining = Math.max(0, goal - netSavings);
         
-        tvCurrentSavings.setText(currencyFormat.format(netSavings) + " saved");
-        tvRemainingAmount.setText(currencyFormat.format(remaining) + " to go");
+        tvCurrentSavings.setText(getString(R.string.goal_total_saved_format, currencyFormat.format(netSavings)));
+        tvRemainingAmount.setText(getString(R.string.goal_remaining_format, currencyFormat.format(remaining)));
 
         int progress = (int) ((netSavings / goal) * 100);
         progressGoal.setProgress(Math.min(progress, 100));
@@ -232,11 +250,11 @@ public class GoalActivity extends AppCompatActivity {
             
             if (validDays > 0) {
                 currentDailyRequirement = remaining / validDays;
-                tvDailyReq.setText("Save " + currencyFormat.format(currentDailyRequirement) + " / day");
+                tvDailyReq.setText(getString(R.string.goal_daily_format, currencyFormat.format(currentDailyRequirement)));
                 tvDailyReq.setVisibility(View.VISIBLE);
             } else {
                 currentDailyRequirement = 0;
-                tvDailyReq.setText("Target reached or no days left!");
+                tvDailyReq.setText(getString(R.string.goal_reached));
             }
         } else {
             tvDailyReq.setVisibility(View.GONE);
@@ -244,7 +262,7 @@ public class GoalActivity extends AppCompatActivity {
 
         if (isCompletedToday) {
             tvDailyStatus.setVisibility(View.VISIBLE);
-            tvDailyStatus.setText("Today's goal completed!");
+            tvDailyStatus.setText(getString(R.string.today_goal_completed));
             btnQuickSave.setEnabled(false);
         } else {
             tvDailyStatus.setVisibility(View.GONE);
