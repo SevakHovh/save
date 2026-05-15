@@ -4,89 +4,134 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
-    android:padding="12dp"
-    tools:context=".ui.fragments.AiAssistantFragment">
+    android:background="@color/background">
+
+    <!-- Sleek Header -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/surface"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="@string/ai_assistant_title"
+        app:titleCentered="true"
+        app:titleTextAppearance="@style/TextAppearance.Material3.TitleLarge">
+
+        <ImageButton
+            android:id="@+id/btn_chat_history"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="end"
+            android:layout_marginEnd="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_recent_history"
+            app:tint="@color/primary" />
+
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_chat_messages"
-        android:layout_width="0dp"
+        android:id="@+id/chat_recycler"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingBottom="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/ll_input_area"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        android:padding="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/suggestion_scroll"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
         tools:listitem="@layout/item_chat_message" />
 
-    <LinearLayout
-        android:id="@+id/ll_input_area"
-        android:layout_width="0dp"
+    <!-- Compact Suggestion Bar -->
+    <HorizontalScrollView
+        android:id="@+id/suggestion_scroll"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingTop="4dp"
+        android:layout_marginBottom="8dp"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toTopOf="@id/input_card">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/suggestion_chips"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="16dp"
+            app:singleLine="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_summary"
+                style="@style/Widget.Material3.Chip.Suggestion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/suggestion_summary" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_tips"
+                style="@style/Widget.Material3.Chip.Suggestion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/suggestion_tips" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_status"
+                style="@style/Widget.Material3.Chip.Suggestion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/suggestion_status" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_market"
+                style="@style/Widget.Material3.Chip.Suggestion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/suggestion_market" />
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
+    <!-- Modern Capsule Input -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/input_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="2dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:strokeWidth="0dp">
 
         <LinearLayout
-            android:id="@+id/ll_input_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:padding="4dp">
 
-            <com.google.android.material.textfield.TextInputLayout
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_mode_toggle"
+                style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:icon="@android:drawable/ic_menu_camera"
+                app:iconSize="22dp" />
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_message"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                app:boxBackgroundMode="outline"
-                app:boxCornerRadiusBottomEnd="28dp"
-                app:boxCornerRadiusBottomStart="28dp"
-                app:boxCornerRadiusTopEnd="28dp"
-                app:boxCornerRadiusTopStart="28dp"
-                app:hintEnabled="false"
-                app:boxStrokeColor="@color/primary"
-                app:boxStrokeWidth="1dp">
+                android:background="@android:color/transparent"
+                android:hint="@string/ai_placeholder"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="4"
+                android:paddingHorizontal="12dp"
+                android:textSize="16sp" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_user_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/ai_placeholder"
-                    android:inputType="textMultiLine"
-                    android:maxLines="4"
-                    android:paddingStart="20dp"
-                    android:paddingEnd="20dp"
-                    android:minLines="1"
-                    android:textColor="@color/on_background"
-                    android:textColorHint="@color/on_background" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.button.MaterialButton
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btn_send"
                 android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:minWidth="100dp"
-                android:text="@string/send"
-                app:cornerRadius="28dp"
-                app:icon="@android:drawable/ic_menu_send"
-                app:iconPadding="4dp" />
+                android:layout_height="wrap_content"
+                app:elevation="0dp"
+                app:fabCustomSize="48dp"
+                app:srcCompat="@android:drawable/ic_menu_send"
+                app:tint="@color/on_primary" />
         </LinearLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_ai_mode"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="4dp"
-            android:text="@string/ai_mode_intelligence"
-            app:cornerRadius="16dp"
-            app:icon="@android:drawable/ic_menu_info_details"
-            app:iconGravity="textStart" />
-    </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

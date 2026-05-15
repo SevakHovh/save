@@ -11,6 +11,7 @@ import dagger.Provides;
 import dagger.hilt.InstallIn;
 import dagger.hilt.android.qualifiers.ApplicationContext;
 import dagger.hilt.components.SingletonComponent;
+import sevak.hovhannisyan.myproject.data.dao.ChatDao;
 import sevak.hovhannisyan.myproject.data.dao.TransactionDao;
 import sevak.hovhannisyan.myproject.data.db.AppDatabase;
 
@@ -30,5 +31,11 @@ public class DatabaseModule {
     @Singleton
     public TransactionDao provideTransactionDao(AppDatabase appDatabase) {
         return appDatabase.transactionDao();
+    }
+
+    @Provides
+    @Singleton
+    public ChatDao provideChatDao(AppDatabase appDatabase) {
+        return appDatabase.chatDao();
     }
 }

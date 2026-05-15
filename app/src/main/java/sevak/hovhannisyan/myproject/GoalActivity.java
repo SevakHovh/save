@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.View;
 import android.widget.CalendarView;
 import android.widget.ImageButton;
@@ -31,33 +32,37 @@ import java.util.concurrent.TimeUnit;
 import dagger.hilt.android.AndroidEntryPoint;
 import sevak.hovhannisyan.myproject.data.model.Transaction;
 import sevak.hovhannisyan.myproject.data.model.TransactionType;
+import sevak.hovhannisyan.myproject.data.repository.UserRepository;
 import sevak.hovhannisyan.myproject.ui.viewmodel.MainViewModel;
 
 @AndroidEntryPoint
 public class GoalActivity extends AppCompatActivity {
 
-    private MainViewModel viewModel;
-    private TextView tvGoalTitle, tvCurrentSavings, tvRemainingAmount, tvPercentage, tvDailyReq, tvDailyStatus;
-    private CircularProgressIndicator progressGoal;
-    private MaterialButton btnUpdateGoal, btnQuickSave, btnCustomSave;
-    private ImageButton btnBack;
-    private CalendarView calendarView;
-    private NumberFormat currencyFormat;
+    private static final String TAG = "GoalActivity";
+    private MainViewModel mainVm;
+    private TextView titleLabel, savingsLabel, remainingLabel, percentLabel, dailyReqLabel, dailyStatusLabel;
+    private CircularProgressIndicator goalCircle;
+    private MaterialButton updateBtn, quickBtn, customBtn;
+    private ImageButton backBtn;
+    private CalendarView calView;
+    private NumberFormat moneyFmt;
     
-    private List<Long> excludedDates = new ArrayList<>();
-    private List<Long> completedDates = new ArrayList<>();
-    private double currentDailyRequirement = 0.0;
+    private List<Long> noSaveDates = new ArrayList<>();
+    private List<Long> doneDates = new ArrayList<>();
+    private double reqPerDay = 0.0;
+    private double currentLeft = 0.0;
+    private boolean goalExists = false;
 
     @Override
     protected void attachBaseContext(Context newBase) {
-        SharedPreferences prefs = newBase.getSharedPreferences("Settings", Context.MODE_PRIVATE);
-        String lang = prefs.getString("My_Lang", "");
-        if (!lang.isEmpty()) {
-            Locale locale = new Locale(lang);
+        SharedPreferences p = newBase.getSharedPreferences("Settings", Context.MODE_PRIVATE);
+        String l = p.getString("My_Lang", "");
+        if (!l.isEmpty()) {
+            Locale locale = new Locale(l);
             Locale.setDefault(locale);
-            Configuration config = new Configuration();
-            config.setLocale(locale);
-            super.attachBaseContext(newBase.createConfigurationContext(config));
+            Configuration conf = new Configuration();
+            conf.setLocale(locale);
+            super.attachBaseContext(newBase.createConfigurationContext(conf));
         } else {
             super.attachBaseContext(newBase);
         }
@@ -68,205 +73,245 @@ public class GoalActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_goal);
 
-        viewModel = new ViewModelProvider(this).get(MainViewModel.class);
-        // Using US locale for currency to ensure dollar sign stays consistent as per user request
-        currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
+        mainVm = new ViewModelProvider(this).get(MainViewModel.class);
+        moneyFmt = NumberFormat.getCurrencyInstance(Locale.US);
 
-        initViews();
-        observeViewModel();
+        initUi();
+        syncData();
     }
 
-    private void initViews() {
-        tvGoalTitle = findViewById(R.id.tv_goal_title);
-        tvCurrentSavings = findViewById(R.id.tv_current_savings);
-        tvRemainingAmount = findViewById(R.id.tv_remaining_amount);
-        tvPercentage = findViewById(R.id.tv_percentage);
-        tvDailyReq = findViewById(R.id.tv_daily_requirement);
-        tvDailyStatus = findViewById(R.id.tv_daily_status);
-        progressGoal = findViewById(R.id.progress_goal_circular);
-        btnUpdateGoal = findViewById(R.id.btn_update_goal);
-        btnQuickSave = findViewById(R.id.btn_quick_save);
-        btnCustomSave = findViewById(R.id.btn_custom_save);
-        btnBack = findViewById(R.id.btn_back);
-        calendarView = findViewById(R.id.calendar_view);
+    private void initUi() {
+        titleLabel = findViewById(R.id.tv_goal_title);
+        savingsLabel = findViewById(R.id.tv_current_savings);
+        remainingLabel = findViewById(R.id.tv_remaining_amount);
+        percentLabel = findViewById(R.id.tv_percentage);
+        dailyReqLabel = findViewById(R.id.tv_daily_requirement);
+        dailyStatusLabel = findViewById(R.id.tv_daily_status);
+        goalCircle = findViewById(R.id.progress_goal_circular);
+        updateBtn = findViewById(R.id.btn_update_goal);
+        quickBtn = findViewById(R.id.btn_quick_save);
+        customBtn = findViewById(R.id.btn_custom_save);
+        backBtn = findViewById(R.id.btn_back);
+        calView = findViewById(R.id.calendar_view);
 
-        calendarView.setMinDate(System.currentTimeMillis() - 1000);
+        calView.setMinDate(System.currentTimeMillis() - 1000);
 
-        btnBack.setOnClickListener(v -> finish());
+        backBtn.setOnClickListener(v -> finish());
 
-        calendarView.setOnDateChangeListener((view, year, month, dayOfMonth) -> {
-            Calendar cal = Calendar.getInstance();
-            cal.set(year, month, dayOfMonth, 0, 0, 0);
-            cal.set(Calendar.MILLISECOND, 0);
-            long selectedDate = cal.getTimeInMillis();
+        calView.setOnDateChangeListener((v, y, m, d) -> {
+            Calendar c = Calendar.getInstance();
+            c.set(y, m, d, 0, 0, 0);
+            c.set(Calendar.MILLISECOND, 0);
+            long time = c.getTimeInMillis();
 
-            Calendar today = Calendar.getInstance();
-            today.set(Calendar.HOUR_OF_DAY, 0);
-            today.set(Calendar.MINUTE, 0);
-            today.set(Calendar.SECOND, 0);
-            today.set(Calendar.MILLISECOND, 0);
+            Calendar now = Calendar.getInstance();
+            now.set(Calendar.HOUR_OF_DAY, 0);
+            now.set(Calendar.MINUTE, 0);
+            now.set(Calendar.SECOND, 0);
+            now.set(Calendar.MILLISECOND, 0);
 
-            if (selectedDate < today.getTimeInMillis()) {
-                Toast.makeText(this, "Cannot modify past dates", Toast.LENGTH_SHORT).show();
+            if (time < now.getTimeInMillis()) {
+                Toast.makeText(this, "Can't change the past", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            if (excludedDates.contains(selectedDate)) {
-                excludedDates.remove(selectedDate);
-                Toast.makeText(this, "Day included in plan", Toast.LENGTH_SHORT).show();
+            if (noSaveDates.contains(time)) {
+                noSaveDates.remove(time);
+                Toast.makeText(this, "Day included!", Toast.LENGTH_SHORT).show();
             } else {
-                excludedDates.add(selectedDate);
-                Toast.makeText(this, "Day excluded from plan", Toast.LENGTH_SHORT).show();
+                noSaveDates.add(time);
+                Toast.makeText(this, "Day skipped!", Toast.LENGTH_SHORT).show();
             }
-            viewModel.updateExcludedDates(excludedDates);
+            mainVm.updateNoSaveDays(noSaveDates);
         });
 
-        btnQuickSave.setOnClickListener(v -> {
-            if (currentDailyRequirement > 0) {
-                addTransaction(currentDailyRequirement, "Daily Savings (Quick Save)");
-                viewModel.markDateAsCompleted(getTodayMidnight());
+        quickBtn.setOnClickListener(v -> {
+            if (reqPerDay > 0) {
+                recordMoney(reqPerDay, "Daily Goal (Quick)");
+                mainVm.markDayDone(getMidnight());
             } else {
-                Toast.makeText(this, "No daily requirement set", Toast.LENGTH_SHORT).show();
+                if (!goalExists) {
+                    Toast.makeText(this, "No goal set yet", Toast.LENGTH_SHORT).show();
+                } else if (currentLeft <= 0) {
+                    Toast.makeText(this, "Goal already achieved!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Today is skipped or no valid days left.", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
-        btnCustomSave.setOnClickListener(v -> showCustomSaveDialog());
+        customBtn.setOnClickListener(v -> {
+            TextInputEditText input = new TextInputEditText(this);
+            input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+            input.setHint(R.string.goal_hint);
 
-        btnUpdateGoal.setOnClickListener(v -> {
-            Toast.makeText(this, "Please update goal from Dashboard to reset timeline.", Toast.LENGTH_LONG).show();
-        });
-    }
-
-    private void showCustomSaveDialog() {
-        TextInputEditText etAmount = new TextInputEditText(this);
-        etAmount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        etAmount.setHint(R.string.goal_hint);
-
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.custom_save)
-                .setView(etAmount)
-                .setPositiveButton(R.string.add, (dialog, which) -> {
-                    String val = etAmount.getText().toString();
-                    if (!val.isEmpty()) {
-                        double amount = Double.parseDouble(val);
-                        addTransaction(amount, "Daily Savings (Custom)");
-                        if (amount >= currentDailyRequirement) {
-                            viewModel.markDateAsCompleted(getTodayMidnight());
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.custom_save)
+                    .setView(input)
+                    .setPositiveButton(R.string.add, (dialog, which) -> {
+                        String s = input.getText().toString();
+                        if (!s.isEmpty()) {
+                            try {
+                                double amt = Double.parseDouble(s);
+                                recordMoney(amt, "Daily Goal (Custom)");
+                                if (amt >= reqPerDay && reqPerDay > 0) mainVm.markDayDone(getMidnight());
+                            } catch (Exception e) {
+                                Toast.makeText(this, R.string.invalid_amount, Toast.LENGTH_SHORT).show();
+                            }
                         }
-                    }
-                })
-                .setNegativeButton(R.string.cancel, null)
-                .show();
-    }
-
-    private void addTransaction(double amount, String description) {
-        Transaction transaction = new Transaction();
-        transaction.setAmount(amount);
-        transaction.setType(TransactionType.INCOME);
-        transaction.setCategory("Savings");
-        transaction.setDescription(description);
-        transaction.setDate(new Date());
-        viewModel.insertTransaction(transaction);
-        Toast.makeText(this, "Saved " + currencyFormat.format(amount), Toast.LENGTH_SHORT).show();
-    }
-
-    private long getTodayMidnight() {
-        Calendar today = Calendar.getInstance();
-        today.set(Calendar.HOUR_OF_DAY, 0);
-        today.set(Calendar.MINUTE, 0);
-        today.set(Calendar.SECOND, 0);
-        today.set(Calendar.MILLISECOND, 0);
-        return today.getTimeInMillis();
-    }
-
-    private void observeViewModel() {
-        viewModel.getUserData().observe(this, data -> {
-            if (data != null && data.containsKey("goalAmount")) {
-                double goal = Double.parseDouble(String.valueOf(data.get("goalAmount")));
-                double startBalance = data.containsKey("goalStartBalance") ? Double.parseDouble(String.valueOf(data.get("goalStartBalance"))) : 0.0;
-                long endTime = data.containsKey("goalEndTime") ? (long) data.get("goalEndTime") : 0;
-                
-                if (data.containsKey("excludedDates")) {
-                    Object excluded = data.get("excludedDates");
-                    if (excluded instanceof List) {
-                        excludedDates = (List<Long>) excluded;
-                    }
-                }
-                
-                if (data.containsKey("completedDates")) {
-                    Object completed = data.get("completedDates");
-                    if (completed instanceof List) {
-                        completedDates = (List<Long>) completed;
-                    }
-                }
-
-                tvGoalTitle.setText(getString(R.string.strategic_goal_prefix, currencyFormat.format(goal)));
-                updateUI(goal, startBalance, viewModel.getBalance().getValue() != null ? viewModel.getBalance().getValue() : 0.0, endTime);
-            }
+                    })
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
         });
 
-        viewModel.getBalance().observe(this, balance -> {
-            Map<String, Object> data = viewModel.getUserData().getValue();
-            if (data != null && data.containsKey("goalAmount")) {
-                double goal = Double.parseDouble(String.valueOf(data.get("goalAmount")));
-                double startBalance = data.containsKey("goalStartBalance") ? Double.parseDouble(String.valueOf(data.get("goalStartBalance"))) : 0.0;
-                long endTime = data.containsKey("goalEndTime") ? (long) data.get("goalEndTime") : 0;
-                updateUI(goal, startBalance, balance != null ? balance : 0.0, endTime);
-            }
+        updateBtn.setOnClickListener(v -> {
+            Toast.makeText(this, "Check Dashboard to reset the goal.", Toast.LENGTH_LONG).show();
         });
     }
 
-    private void updateUI(double goal, double startBalance, double currentBalance, long endTime) {
-        if (goal <= 0) return;
+    private void recordMoney(double amt, String note) {
+        Transaction t = new Transaction();
+        t.setAmount(amt);
+        t.setType(TransactionType.INCOME);
+        t.setCategory("Savings");
+        t.setDescription(note);
+        t.setDate(new Date());
+        mainVm.addNewTransaction(t);
+        Toast.makeText(this, "Saved " + moneyFmt.format(amt), Toast.LENGTH_SHORT).show();
+    }
 
-        double netSavings = Math.max(0, currentBalance - startBalance);
-        double remaining = Math.max(0, goal - netSavings);
+    private long getMidnight() {
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.HOUR_OF_DAY, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.set(Calendar.MILLISECOND, 0);
+        return c.getTimeInMillis();
+    }
+
+    private double parseDouble(Object obj) {
+        if (obj == null) return 0.0;
+        if (obj instanceof Number) return ((Number) obj).doubleValue();
+        try {
+            return Double.parseDouble(String.valueOf(obj));
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    private long parseLong(Object obj) {
+        if (obj == null) return 0L;
+        if (obj instanceof Number) return ((Number) obj).longValue();
+        try {
+            return (long) Double.parseDouble(String.valueOf(obj));
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    private void syncData() {
+        mainVm.getUserData().observe(this, data -> {
+            if (data != null && data.containsKey(UserRepository.FIELD_GOAL_AMOUNT)) {
+                double g = parseDouble(data.get(UserRepository.FIELD_GOAL_AMOUNT));
+                Log.d(TAG, "SyncData: goalAmount = " + g);
+                if (g > 0) {
+                    goalExists = true;
+                    double start = parseDouble(data.get(UserRepository.FIELD_GOAL_START_BALANCE));
+                    long end = parseLong(data.get(UserRepository.FIELD_GOAL_END_TIME));
+                    
+                    noSaveDates = safeLongList(data.get(UserRepository.FIELD_EXCLUDED_DATES));
+                    doneDates = safeLongList(data.get(UserRepository.FIELD_COMPLETED_DATES));
+
+                    titleLabel.setText(getString(R.string.strategic_goal_prefix, moneyFmt.format(g)));
+                    refresh(g, start, mainVm.getBalance().getValue() != null ? mainVm.getBalance().getValue() : 0.0, end);
+                } else {
+                    goalExists = false;
+                    Log.d(TAG, "SyncData: goalAmount is 0 or less");
+                }
+            } else {
+                goalExists = false;
+                Log.d(TAG, "SyncData: data is null or doesn't contain goalAmount");
+            }
+        });
+
+        mainVm.getBalance().observe(this, b -> {
+            Map<String, Object> data = mainVm.getUserData().getValue();
+            if (data != null && data.containsKey(UserRepository.FIELD_GOAL_AMOUNT)) {
+                double g = parseDouble(data.get(UserRepository.FIELD_GOAL_AMOUNT));
+                if (g > 0) {
+                    double start = parseDouble(data.get(UserRepository.FIELD_GOAL_START_BALANCE));
+                    long end = parseLong(data.get(UserRepository.FIELD_GOAL_END_TIME));
+                    refresh(g, start, b != null ? b : 0.0, end);
+                }
+            }
+        });
+    }
+
+    private List<Long> safeLongList(Object obj) {
+        List<Long> list = new ArrayList<>();
+        if (obj instanceof List) {
+            for (Object item : (List<?>) obj) {
+                list.add(parseLong(item));
+            }
+        }
+        return list;
+    }
+
+    private void refresh(double goal, double start, double current, long end) {
+        if (goal <= 0) {
+            goalExists = false;
+            return;
+        }
+        goalExists = true;
+
+        double net = Math.max(0, current - start);
+        double left = Math.max(0, goal - net);
+        currentLeft = left;
         
-        tvCurrentSavings.setText(getString(R.string.goal_total_saved_format, currencyFormat.format(netSavings)));
-        tvRemainingAmount.setText(getString(R.string.goal_remaining_format, currencyFormat.format(remaining)));
+        savingsLabel.setText(getString(R.string.goal_total_saved_format, moneyFmt.format(net)));
+        remainingLabel.setText(getString(R.string.goal_remaining_format, moneyFmt.format(left)));
 
-        int progress = (int) ((netSavings / goal) * 100);
-        progressGoal.setProgress(Math.min(progress, 100));
-        tvPercentage.setText(Math.min(progress, 100) + "%");
+        int p = (int) ((net / goal) * 100);
+        goalCircle.setProgress(Math.min(p, 100));
+        percentLabel.setText(Math.min(p, 100) + "%");
 
-        long todayMidnight = getTodayMidnight();
-        boolean isCompletedToday = completedDates.contains(todayMidnight);
+        long mid = getMidnight();
+        boolean doneToday = doneDates.contains(mid);
 
-        if (endTime > System.currentTimeMillis()) {
-            long diffInMillis = endTime - todayMidnight;
-            long totalDays = TimeUnit.MILLISECONDS.toDays(diffInMillis);
+        if (end >= mid && left > 0) {
+            long diffMs = end - mid;
+            long totalDays = TimeUnit.MILLISECONDS.toDays(diffMs) + 1;
             if (totalDays <= 0) totalDays = 1;
             
-            long validDays = 0;
+            long valid = 0;
             for (int i = 0; i < totalDays; i++) {
-                Calendar check = Calendar.getInstance();
-                check.setTimeInMillis(todayMidnight);
-                check.add(Calendar.DAY_OF_YEAR, i);
-                long checkTime = check.getTimeInMillis();
-                if (!excludedDates.contains(checkTime) && !completedDates.contains(checkTime)) {
-                    validDays++;
-                }
+                Calendar c = Calendar.getInstance();
+                c.setTimeInMillis(mid);
+                c.add(Calendar.DAY_OF_YEAR, i);
+                long t = c.getTimeInMillis();
+                if (!noSaveDates.contains(t) && !doneDates.contains(t)) valid++;
             }
             
-            if (validDays > 0) {
-                currentDailyRequirement = remaining / validDays;
-                tvDailyReq.setText(getString(R.string.goal_daily_format, currencyFormat.format(currentDailyRequirement)));
-                tvDailyReq.setVisibility(View.VISIBLE);
+            if (valid > 0) {
+                reqPerDay = left / valid;
+                dailyReqLabel.setText(getString(R.string.goal_daily_format, moneyFmt.format(reqPerDay)));
+                dailyReqLabel.setVisibility(View.VISIBLE);
             } else {
-                currentDailyRequirement = 0;
-                tvDailyReq.setText(getString(R.string.goal_reached));
+                reqPerDay = 0;
+                dailyReqLabel.setText(getString(R.string.goal_reached));
             }
         } else {
-            tvDailyReq.setVisibility(View.GONE);
+            reqPerDay = 0;
+            dailyReqLabel.setVisibility(View.GONE);
         }
 
-        if (isCompletedToday) {
-            tvDailyStatus.setVisibility(View.VISIBLE);
-            tvDailyStatus.setText(getString(R.string.today_goal_completed));
-            btnQuickSave.setEnabled(false);
+        if (doneToday) {
+            dailyStatusLabel.setVisibility(View.VISIBLE);
+            dailyStatusLabel.setText(getString(R.string.today_goal_completed));
+            quickBtn.setEnabled(false);
         } else {
-            tvDailyStatus.setVisibility(View.GONE);
-            btnQuickSave.setEnabled(true);
+            dailyStatusLabel.setVisibility(View.GONE);
+            quickBtn.setEnabled(true);
         }
     }
 }

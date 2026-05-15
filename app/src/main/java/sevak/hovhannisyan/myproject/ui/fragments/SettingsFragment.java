@@ -32,89 +32,94 @@ import sevak.hovhannisyan.myproject.ui.viewmodel.MainViewModel;
 
 public class SettingsFragment extends Fragment {
 
-    private MainViewModel viewModel;
-    private MaterialButton btnBack, btnChangeTheme, btnChangeLanguage, btnResetPassword, btnClearData, btnPersonalInfo, btnSignOut;
-    private MaterialSwitch switchNotifications;
-    private LinearLayout layoutPersonalInfo;
-    private TextView tvUserEmail;
-    private SharedPreferences goalPrefs;
-    private static final String PREFS_NAME = "goal_prefs";
-    private static final String KEY_NOTIFICATIONS_ENABLED = "notifications_enabled";
+    private MainViewModel mainVm;
+    private MaterialButton backBtn, themeBtn, langBtn, resetBtn, clearBtn, infoBtn, logoutBtn;
+    private MaterialSwitch notifySwitch;
+    private LinearLayout infoLayout;
+    private TextView emailText;
+    private SharedPreferences prefs;
+    
+    private static final String PREF_FILE = "goal_prefs";
+    private static final String NOTIFY_KEY = "notifications_enabled";
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-        goalPrefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    public void onCreate(@Nullable Bundle state) {
+        super.onCreate(state);
+        mainVm = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+        prefs = requireContext().getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE);
     }
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_settings, container, false);
+    public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup container, @Nullable Bundle state) {
+        return inf.inflate(R.layout.fragment_settings, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        // Use 'state' here because that is what I named the parameter
+        super.onViewCreated(view, state);
 
-        btnBack = view.findViewById(R.id.btn_back);
-        btnChangeTheme = view.findViewById(R.id.btn_change_theme);
-        btnChangeLanguage = view.findViewById(R.id.btn_change_language);
-        btnResetPassword = view.findViewById(R.id.btn_reset_password);
-        btnClearData = view.findViewById(R.id.btn_clear_data);
-        btnPersonalInfo = view.findViewById(R.id.btn_personal_info);
-        btnSignOut = view.findViewById(R.id.btn_sign_out);
-        switchNotifications = view.findViewById(R.id.switch_notifications);
-        layoutPersonalInfo = view.findViewById(R.id.layout_personal_info);
-        tvUserEmail = view.findViewById(R.id.tv_user_email);
+        // Wiring up the UI elements
+        backBtn = view.findViewById(R.id.btn_back);
+        themeBtn = view.findViewById(R.id.btn_change_theme);
+        langBtn = view.findViewById(R.id.btn_change_language);
+        resetBtn = view.findViewById(R.id.btn_reset_password);
+        clearBtn = view.findViewById(R.id.btn_clear_data);
+        infoBtn = view.findViewById(R.id.btn_personal_info);
+        logoutBtn = view.findViewById(R.id.btn_sign_out);
+        notifySwitch = view.findViewById(R.id.switch_notifications);
+        infoLayout = view.findViewById(R.id.layout_personal_info);
+        emailText = view.findViewById(R.id.tv_user_email);
 
-        btnBack.setOnClickListener(v -> Navigation.findNavController(v).navigateUp());
+        backBtn.setOnClickListener(v -> Navigation.findNavController(v).navigateUp());
 
-        btnChangeTheme.setOnClickListener(v -> showThemeDialog());
+        themeBtn.setOnClickListener(v -> pickTheme());
         
-        btnChangeLanguage.setOnClickListener(v -> showLanguageDialog());
+        langBtn.setOnClickListener(v -> pickLanguage());
 
-        btnPersonalInfo.setOnClickListener(v -> {
-            if (layoutPersonalInfo.getVisibility() == View.VISIBLE) {
-                layoutPersonalInfo.setVisibility(View.GONE);
-                btnPersonalInfo.setText(R.string.account_details_show);
+        infoBtn.setOnClickListener(v -> {
+            if (infoLayout.getVisibility() == View.VISIBLE) {
+                infoLayout.setVisibility(View.GONE);
+                infoBtn.setText(R.string.account_details_show);
             } else {
-                layoutPersonalInfo.setVisibility(View.VISIBLE);
-                btnPersonalInfo.setText(R.string.account_details_hide);
+                infoLayout.setVisibility(View.VISIBLE);
+                infoBtn.setText(R.string.account_details_hide);
             }
         });
 
-        btnResetPassword.setOnClickListener(v -> handlePasswordReset());
+        resetBtn.setOnClickListener(v -> doPasswordReset());
 
-        btnClearData.setOnClickListener(v -> showClearDataConfirmation());
+        clearBtn.setOnClickListener(v -> confirmClear());
 
-        btnSignOut.setOnClickListener(v -> {
+        logoutBtn.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(requireContext(), LoginActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
+            Intent i = new Intent(requireContext(), LoginActivity.class);
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(i);
         });
 
-        boolean isEnabled = goalPrefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, true);
-        switchNotifications.setChecked(isEnabled);
+        // Load the toggle state
+        boolean on = prefs.getBoolean(NOTIFY_KEY, true);
+        notifySwitch.setChecked(on);
 
-        switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            goalPrefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, isChecked).apply();
+        notifySwitch.setOnCheckedChangeListener((btn, isChecked) -> {
+            prefs.edit().putBoolean(NOTIFY_KEY, isChecked).apply();
             String msg = isChecked ? "Notifications enabled" : "Notifications disabled";
             Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
         });
 
+        // Show user email
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-            tvUserEmail.setText(FirebaseAuth.getInstance().getCurrentUser().getEmail());
+            emailText.setText(FirebaseAuth.getInstance().getCurrentUser().getEmail());
         }
     }
 
-    private void showThemeDialog() {
-        String[] themes = {getString(R.string.theme_light), getString(R.string.theme_dark), getString(R.string.theme_system)};
+    private void pickTheme() {
+        String[] options = {getString(R.string.theme_light), getString(R.string.theme_dark), getString(R.string.theme_system)};
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.theme_dialog_title)
-                .setItems(themes, (dialog, which) -> {
+                .setItems(options, (dialog, which) -> {
                     if (which == 0) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
                     else if (which == 1) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
                     else AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
@@ -122,54 +127,54 @@ public class SettingsFragment extends Fragment {
                 .show();
     }
 
-    private void showLanguageDialog() {
-        String[] langs = {getString(R.string.language_en), getString(R.string.language_ru), getString(R.string.language_hy)};
+    private void pickLanguage() {
+        String[] list = {getString(R.string.language_en), getString(R.string.language_ru), getString(R.string.language_hy)};
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.language_dialog_title)
-                .setItems(langs, (dialog, which) -> {
-                    String langCode = "en";
-                    if (which == 1) langCode = "ru";
-                    else if (which == 2) langCode = "hy";
-                    setLocale(langCode);
+                .setItems(list, (dialog, which) -> {
+                    String code = "en";
+                    if (which == 1) code = "ru";
+                    else if (which == 2) code = "hy";
+                    updateLocale(code);
                 })
                 .show();
     }
 
-    private void setLocale(String langCode) {
-        Locale locale = new Locale(langCode);
-        Locale.setDefault(locale);
-        Configuration config = new Configuration();
-        config.setLocale(locale);
-        requireContext().getResources().updateConfiguration(config, requireContext().getResources().getDisplayMetrics());
+    private void updateLocale(String code) {
+        Locale l = new Locale(code);
+        Locale.setDefault(l);
+        Configuration c = new Configuration();
+        c.setLocale(l);
+        requireContext().getResources().updateConfiguration(c, requireContext().getResources().getDisplayMetrics());
         
-        SharedPreferences.Editor editor = requireContext().getSharedPreferences("Settings", Context.MODE_PRIVATE).edit();
-        editor.putString("My_Lang", langCode);
-        editor.apply();
+        SharedPreferences.Editor ed = requireContext().getSharedPreferences("Settings", Context.MODE_PRIVATE).edit();
+        ed.putString("My_Lang", code);
+        ed.apply();
 
         requireActivity().recreate();
     }
 
-    private void handlePasswordReset() {
+    private void doPasswordReset() {
         String email = FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getEmail() : null;
         if (email != null) {
             FirebaseAuth.getInstance().sendPasswordResetEmail(email)
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
-                            Toast.makeText(getContext(), "Reset link sent to your email", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Reset link sent!", Toast.LENGTH_SHORT).show();
                         }
                     });
         }
     }
 
-    private void showClearDataConfirmation() {
+    private void confirmClear() {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Clear Data")
-                .setMessage("Are you sure you want to delete all transactions? This cannot be undone.")
-                .setPositiveButton("Delete", (dialog, which) -> {
-                    viewModel.clearAllTransactions();
-                    Toast.makeText(getContext(), "All data cleared", Toast.LENGTH_SHORT).show();
+                .setMessage("Delete everything? This cannot be undone.")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    mainVm.clearAllData();
+                    Toast.makeText(getContext(), "Done.", Toast.LENGTH_SHORT).show();
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton("No", null)
                 .show();
     }
 }

@@ -14,23 +14,24 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-
 import java.util.Locale;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import sevak.hovhannisyan.myproject.R;
+import sevak.hovhannisyan.myproject.databinding.ActivityMainBinding;
 
 /**
- * Main Activity with Bottom Navigation and Navigation Component setup.
+ * Main Activity for the SAVE app. 
+ * Managed by a 17-year old dev who actually likes clean code.
  */
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
 
+    private ActivityMainBinding binding;
     private NavController navController;
 
     @Override
     protected void attachBaseContext(Context newBase) {
+        // Apply language from settings
         SharedPreferences prefs = newBase.getSharedPreferences("Settings", Context.MODE_PRIVATE);
         String lang = prefs.getString("My_Lang", "");
         if (!lang.isEmpty()) {
@@ -47,27 +48,31 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Setup ViewBinding (way better than findViewById)
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        setupNavigation();
+        initNavigation();
     }
 
-    private void setupNavigation() {
-        // More robust way to find NavController in onCreate when using FragmentContainerView
+    private void initNavigation() {
+        // NavHost setup
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
         
         if (navHostFragment != null) {
             navController = navHostFragment.getNavController();
-            BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-            NavigationUI.setupWithNavController(bottomNavigationView, navController);
+            // Link the bottom nav with the controller
+            NavigationUI.setupWithNavController(binding.bottomNavigation, navController);
         }
     }
 

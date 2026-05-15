@@ -32,4 +32,7 @@
     <color name="expense_red">#D32F2F</color>
     
     <color name="glass_white">#CCFFFFFF</color>
+
+    <!-- Navigation Colors -->
+    <color name="nav_unselected">#9E9E9E</color>
 </resources>

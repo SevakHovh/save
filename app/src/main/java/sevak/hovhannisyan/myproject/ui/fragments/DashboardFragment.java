@@ -2,8 +2,10 @@ package sevak.hovhannisyan.myproject.ui.fragments;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -44,406 +46,398 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.inject.Inject;
-
 import sevak.hovhannisyan.myproject.GoalActivity;
 import sevak.hovhannisyan.myproject.GoalReceiver;
 import sevak.hovhannisyan.myproject.R;
 import sevak.hovhannisyan.myproject.api.FinnhubResponse;
 import sevak.hovhannisyan.myproject.data.model.Transaction;
 import sevak.hovhannisyan.myproject.data.model.TransactionType;
+import sevak.hovhannisyan.myproject.data.repository.UserRepository;
 import sevak.hovhannisyan.myproject.ui.viewmodel.MainViewModel;
 
 @AndroidEntryPoint
 public class DashboardFragment extends Fragment {
 
-    private static final String TAG = "DashboardFragment";
+    private static final String LOG_TAG = "DashboardFragment";
 
-    private MainViewModel viewModel;
-    private TextView tvBalance;
-    private TextView tvTotalIncome;
-    private TextView tvTotalExpense;
-    private TextView tvGoalProgress;
-    private LinearProgressIndicator progressGoal;
-    private EditText etGoalAmount;
-    private MaterialButton btnSetGoal;
-    private TextView tvTargetDate;
+    private MainViewModel mainVm;
+    
+    private TextView balanceTxt, incomeTxt, expenseTxt, goalTxt, dateTxt, timeTxt;
+    private LinearProgressIndicator goalBar;
+    private EditText goalInput;
+    private MaterialButton setGoalBtn;
 
-    private MaterialCardView cardBalance;
-    private MaterialCardView cardIncome;
-    private MaterialCardView cardExpense;
-    private MaterialCardView cardMarket;
-    private MaterialCardView cardGoal;
-    private LinearLayout layoutMarketItems;
-    private ProgressBar pbMarket;
+    private MaterialCardView balanceCard, incomeCard, expenseCard, marketCard, goalCard;
+    private LinearLayout marketContainer;
+    private ProgressBar marketProgress;
 
-    private NumberFormat currencyFormat;
-    private double currentProfileSalary = 0.0;
-    private double currentProfileFixedExpenses = 0.0;
-    private long selectedEndTime = -1;
+    private NumberFormat moneyFmt;
+    private double profileSalary = 0.0;
+    private double profileFixedExp = 0.0;
+    private long goalEndTime = -1;
+    
+    private int reminderHour = 20;
+    private int reminderMinute = 0;
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-        // Using US locale for currency to ensure dollar sign stays consistent as per user request
-        currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
+    public void onCreate(@Nullable Bundle state) {
+        super.onCreate(state);
+        mainVm = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+        moneyFmt = NumberFormat.getCurrencyInstance(Locale.US);
+        
+        SharedPreferences p = requireContext().getSharedPreferences("goal_prefs", Context.MODE_PRIVATE);
+        reminderHour = p.getInt("reminder_hour", 20);
+        reminderMinute = p.getInt("reminder_minute", 0);
     }
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_dashboard, container, false);
+    public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup container, @Nullable Bundle state) {
+        return inf.inflate(R.layout.fragment_dashboard, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        super.onViewCreated(view, state);
 
         try {
-            tvBalance = view.findViewById(R.id.tv_balance);
-            tvTotalIncome = view.findViewById(R.id.tv_total_income);
-            tvTotalExpense = view.findViewById(R.id.tv_total_expense);
-            tvGoalProgress = view.findViewById(R.id.tv_goal_progress);
-            progressGoal = view.findViewById(R.id.progress_goal);
-            etGoalAmount = view.findViewById(R.id.et_goal_amount);
-            btnSetGoal = view.findViewById(R.id.btn_set_goal);
-            tvTargetDate = view.findViewById(R.id.tv_target_date_dashboard);
+            balanceTxt = view.findViewById(R.id.tv_balance);
+            incomeTxt = view.findViewById(R.id.tv_total_income);
+            expenseTxt = view.findViewById(R.id.tv_total_expense);
+            goalTxt = view.findViewById(R.id.tv_goal_progress);
+            goalBar = view.findViewById(R.id.progress_goal);
+            goalInput = view.findViewById(R.id.et_goal_amount);
+            setGoalBtn = view.findViewById(R.id.btn_set_goal);
+            dateTxt = view.findViewById(R.id.tv_target_date_dashboard);
+            timeTxt = view.findViewById(R.id.tv_notification_time);
 
-            cardBalance = view.findViewById(R.id.card_balance);
-            cardIncome = view.findViewById(R.id.card_income);
-            cardExpense = view.findViewById(R.id.card_expense);
-            cardMarket = view.findViewById(R.id.card_market);
-            cardGoal = view.findViewById(R.id.card_goal);
+            balanceCard = view.findViewById(R.id.card_balance);
+            incomeCard = view.findViewById(R.id.card_income);
+            expenseCard = view.findViewById(R.id.card_expense);
+            marketCard = view.findViewById(R.id.card_market);
+            goalCard = view.findViewById(R.id.card_goal);
             
-            layoutMarketItems = view.findViewById(R.id.layout_market_items);
-            pbMarket = view.findViewById(R.id.pb_market);
+            marketContainer = view.findViewById(R.id.layout_market_items);
+            marketProgress = view.findViewById(R.id.pb_market);
 
-            observeViewModel();
-            setupButtons();
+            timeTxt.setText(String.format(getCurrentLocale(), "Reminder: %02d:%02d", reminderHour, reminderMinute));
 
-            viewModel.fetchMarketData();
+            startObserving();
+            initClickListeners();
+
+            mainVm.fetchMarketData();
         } catch (Exception e) {
-            Log.e(TAG, "Error in onViewCreated: " + e.getMessage());
+            Log.e(LOG_TAG, "View setup failed: " + e.getMessage());
         }
     }
 
-    private void setupButtons() {
-        if (cardMarket != null) {
-            cardMarket.setOnClickListener(v -> {
-                Navigation.findNavController(v).navigate(R.id.action_dashboardFragment_to_marketFragment);
-            });
+    private Locale getCurrentLocale() {
+        return getResources().getConfiguration().getLocales().get(0);
+    }
+
+    private void initClickListeners() {
+        if (marketCard != null) {
+            marketCard.setOnClickListener(v -> Navigation.findNavController(v).navigate(R.id.action_dashboardFragment_to_marketFragment));
         }
 
-        if (cardIncome != null) {
-            cardIncome.setOnClickListener(v -> showIncomeMenu());
-        }
+        if (incomeCard != null) incomeCard.setOnClickListener(v -> popupIncomeDialog());
+        if (expenseCard != null) expenseCard.setOnClickListener(v -> popupExpenseDialog());
 
-        if (cardExpense != null) {
-            cardExpense.setOnClickListener(v -> showExpenseMenu());
-        }
-
-        if (cardBalance != null) {
-            cardBalance.setOnClickListener(v -> {
-                Navigation.findNavController(v).navigate(R.id.action_dashboardFragment_to_balanceStatsFragment);
-            });
+        if (balanceCard != null) {
+            balanceCard.setOnClickListener(v -> Navigation.findNavController(v).navigate(R.id.action_dashboardFragment_to_balanceStatsFragment));
         }
         
-        if (cardGoal != null) {
-            cardGoal.setOnClickListener(v -> {
-                Intent intent = new Intent(requireContext(), GoalActivity.class);
-                startActivity(intent);
-            });
+        if (goalCard != null) {
+            goalCard.setOnClickListener(v -> startActivity(new Intent(requireContext(), GoalActivity.class)));
         }
 
-        if (tvTargetDate != null) {
-            tvTargetDate.setOnClickListener(v -> {
-                CalendarConstraints constraints = new CalendarConstraints.Builder()
+        if (dateTxt != null) {
+            dateTxt.setOnClickListener(v -> {
+                CalendarConstraints c = new CalendarConstraints.Builder()
                         .setValidator(DateValidatorPointForward.now())
                         .build();
 
-                MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
+                MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
                         .setTitleText(R.string.select_end_date)
-                        .setCalendarConstraints(constraints)
+                        .setCalendarConstraints(c)
                         .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
                         .build();
                         
-                datePicker.addOnPositiveButtonClickListener(selection -> {
-                    selectedEndTime = selection;
-                    SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-                    tvTargetDate.setText(getString(R.string.target_date_prefix, sdf.format(new Date(selection))));
+                picker.addOnPositiveButtonClickListener(time -> {
+                    // Adjust UTC midnight from picker to local midnight to avoid timezone mismatch
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTimeInMillis(time);
+                    
+                    Calendar local = Calendar.getInstance();
+                    local.set(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH), 23, 59, 59);
+                    goalEndTime = local.getTimeInMillis();
+                    
+                    SimpleDateFormat f = new SimpleDateFormat("MMM dd, yyyy", getCurrentLocale());
+                    dateTxt.setText(getString(R.string.target_date_prefix, f.format(new Date(goalEndTime))));
                 });
-                datePicker.show(getParentFragmentManager(), "DATE_PICKER");
+                picker.show(getParentFragmentManager(), "DATE_PICKER");
             });
         }
 
-        if (btnSetGoal != null) {
-            btnSetGoal.setOnClickListener(v -> {
-                String text = etGoalAmount.getText().toString().trim();
-                if (text.isEmpty()) {
-                    etGoalAmount.setError(getString(R.string.required));
+        if (timeTxt != null) {
+            timeTxt.setOnClickListener(v -> {
+                TimePickerDialog timePicker = new TimePickerDialog(requireContext(), (view, hour, minute) -> {
+                    reminderHour = hour;
+                    reminderMinute = minute;
+                    timeTxt.setText(String.format(getCurrentLocale(), "Reminder: %02d:%02d", hour, minute));
+                    
+                    requireContext().getSharedPreferences("goal_prefs", Context.MODE_PRIVATE)
+                            .edit()
+                            .putInt("reminder_hour", hour)
+                            .putInt("reminder_minute", minute)
+                            .apply();
+                }, reminderHour, reminderMinute, true);
+                timePicker.show();
+            });
+        }
+
+        if (setGoalBtn != null) {
+            setGoalBtn.setOnClickListener(v -> {
+                String val = goalInput.getText().toString().trim();
+                if (val.isEmpty()) {
+                    goalInput.setError(getString(R.string.required));
                     return;
                 }
-                if (selectedEndTime == -1) {
+                if (goalEndTime == -1) {
                     Toast.makeText(getContext(), R.string.select_target_date, Toast.LENGTH_SHORT).show();
                     return;
                 }
                 try {
-                    double goal = Double.parseDouble(text);
-                    if (goal <= 0) {
-                        etGoalAmount.setError(getString(R.string.invalid_amount));
+                    double num = Double.parseDouble(val);
+                    if (num <= 0) {
+                        goalInput.setError(getString(R.string.invalid_amount));
                         return;
                     }
-                    viewModel.saveGoalAmount(goal, selectedEndTime);
-                    scheduleDailyNotification();
+                    mainVm.saveGoal(num, goalEndTime);
+                    setupAlarm();
                     Toast.makeText(getContext(), R.string.goal_set_success, Toast.LENGTH_SHORT).show();
-                } catch (NumberFormatException e) {
-                    etGoalAmount.setError(getString(R.string.invalid_amount));
+                } catch (Exception e) {
+                    goalInput.setError(getString(R.string.invalid_amount));
                 }
             });
         }
     }
 
-    private void scheduleDailyNotification() {
-        Context context = requireContext();
-        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(context, GoalReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+    private void setupAlarm() {
+        Context ctx = requireContext();
+        AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+        Intent i = new Intent(ctx, GoalReceiver.class);
+        PendingIntent pi = PendingIntent.getBroadcast(ctx, 0, i, PendingIntent.FLAG_IMMUTABLE);
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis());
-        calendar.set(Calendar.HOUR_OF_DAY, 20); // 8:00 PM
-        calendar.set(Calendar.MINUTE, 0);
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, reminderHour);
+        cal.set(Calendar.MINUTE, reminderMinute);
+        cal.set(Calendar.SECOND, 0);
 
-        if (calendar.getTimeInMillis() < System.currentTimeMillis()) {
-            calendar.add(Calendar.DAY_OF_YEAR, 1);
+        if (cal.getTimeInMillis() < System.currentTimeMillis()) {
+            cal.add(Calendar.DAY_OF_YEAR, 1);
         }
 
-        if (alarmManager != null) {
-            alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),
-                    AlarmManager.INTERVAL_DAY, pendingIntent);
-        }
+        if (am != null) am.setInexactRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pi);
     }
 
-    private void showIncomeMenu() {
-        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_income, null);
-        TextInputEditText etIncomeAmount = dialogView.findViewById(R.id.et_income_amount);
-        MaterialButton btnAddSalary = dialogView.findViewById(R.id.btn_add_salary);
+    private void popupIncomeDialog() {
+        View v = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_income, null);
+        TextInputEditText input = v.findViewById(R.id.et_income_amount);
+        MaterialButton salaryBtn = v.findViewById(R.id.btn_add_salary);
 
-        btnAddSalary.setText(getString(R.string.add_salary_format, currencyFormat.format(currentProfileSalary)));
+        salaryBtn.setText(getString(R.string.add_salary_format, moneyFmt.format(profileSalary)));
 
-        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+        AlertDialog d = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.add_income)
-                .setView(dialogView)
-                .setPositiveButton(R.string.add, (d, which) -> {
-                    String amountStr = etIncomeAmount.getText().toString();
-                    if (!amountStr.isEmpty()) {
-                        addTransaction(Double.parseDouble(amountStr), "Manual Income", TransactionType.INCOME, "Income");
-                    }
+                .setView(v)
+                .setPositiveButton(R.string.add, (dialog, which) -> {
+                    String s = input.getText().toString();
+                    if (!s.isEmpty()) record(Double.parseDouble(s), "Manual Income", TransactionType.INCOME, "Income");
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .create();
 
-        btnAddSalary.setOnClickListener(v -> {
-            if (currentProfileSalary > 0) {
-                addTransaction(currentProfileSalary, "Monthly Salary", TransactionType.INCOME, "Income");
-                dialog.dismiss();
+        salaryBtn.setOnClickListener(btn -> {
+            if (profileSalary > 0) {
+                record(profileSalary, "Monthly Salary", TransactionType.INCOME, "Income");
+                d.dismiss();
             } else {
                 Toast.makeText(requireContext(), "Set salary in Profile first", Toast.LENGTH_SHORT).show();
             }
         });
 
-        dialog.show();
+        d.show();
     }
 
-    private void showExpenseMenu() {
-        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_expense, null);
-        TextInputEditText etExpenseAmount = dialogView.findViewById(R.id.et_expense_amount);
-        AutoCompleteTextView spinnerCategory = dialogView.findViewById(R.id.spinner_category);
-        TextInputLayout tilCustomCategory = dialogView.findViewById(R.id.til_custom_category);
-        TextInputEditText etCustomCategory = dialogView.findViewById(R.id.et_custom_category);
-        MaterialButton btnAddFixed = dialogView.findViewById(R.id.btn_add_fixed_expenses);
+    private void popupExpenseDialog() {
+        View v = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_expense, null);
+        TextInputEditText amountInput = v.findViewById(R.id.et_expense_amount);
+        AutoCompleteTextView catSpinner = v.findViewById(R.id.spinner_category);
+        TextInputLayout customCatLayout = v.findViewById(R.id.til_custom_category);
+        TextInputEditText customCatInput = v.findViewById(R.id.et_custom_category);
+        MaterialButton fixedBtn = v.findViewById(R.id.btn_add_fixed_expenses);
 
-        String[] localizedCategories = {
-                getString(R.string.cat_food),
-                getString(R.string.cat_transport),
-                getString(R.string.cat_shopping),
-                getString(R.string.cat_entertainment),
-                getString(R.string.cat_health),
-                getString(R.string.cat_utilities),
-                getString(R.string.cat_other),
-                getString(R.string.cat_custom)
+        String[] cats = {
+                getString(R.string.cat_food), getString(R.string.cat_transport), getString(R.string.cat_shopping),
+                getString(R.string.cat_entertainment), getString(R.string.cat_health), getString(R.string.cat_utilities),
+                getString(R.string.cat_other), getString(R.string.cat_custom)
         };
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, localizedCategories);
-        spinnerCategory.setAdapter(adapter);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, cats);
+        catSpinner.setAdapter(adapter);
 
-        spinnerCategory.setOnItemClickListener((parent, view, position, id) -> {
-            String selected = (String) parent.getItemAtPosition(position);
-            if (getString(R.string.cat_custom).equals(selected)) {
-                tilCustomCategory.setVisibility(View.VISIBLE);
-            } else {
-                tilCustomCategory.setVisibility(View.GONE);
-            }
+        catSpinner.setOnItemClickListener((p, view, pos, id) -> {
+            String s = (String) p.getItemAtPosition(pos);
+            customCatLayout.setVisibility(getString(R.string.cat_custom).equals(s) ? View.VISIBLE : View.GONE);
         });
 
-        btnAddFixed.setText(getString(R.string.pay_fixed_format, currencyFormat.format(currentProfileFixedExpenses)));
+        fixedBtn.setText(getString(R.string.pay_fixed_format, moneyFmt.format(profileFixedExp)));
 
-        AlertDialog dialog = new MaterialAlertDialogBuilder(requireContext())
+        AlertDialog d = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.add_expense)
-                .setView(dialogView)
-                .setPositiveButton(R.string.add, (d, which) -> {
-                    String amountStr = etExpenseAmount.getText().toString();
-                    String category = spinnerCategory.getText().toString();
-                    
-                    if (getString(R.string.cat_custom).equals(category)) {
-                        category = etCustomCategory.getText().toString().trim();
-                    }
-
-                    if (category.isEmpty()) category = getString(R.string.cat_other);
-                    
-                    if (!amountStr.isEmpty()) {
-                        addTransaction(Double.parseDouble(amountStr), "Manual Expense", TransactionType.EXPENSE, category);
-                    }
+                .setView(v)
+                .setPositiveButton(R.string.add, (dialog, which) -> {
+                    String amt = amountInput.getText().toString();
+                    String cat = catSpinner.getText().toString();
+                    if (getString(R.string.cat_custom).equals(cat)) cat = customCatInput.getText().toString().trim();
+                    if (cat.isEmpty()) cat = getString(R.string.cat_other);
+                    if (!amt.isEmpty()) record(Double.parseDouble(amt), "Manual Expense", TransactionType.EXPENSE, cat);
                 })
                 .setNegativeButton(R.string.cancel, null)
                 .create();
 
-        btnAddFixed.setOnClickListener(v -> {
-            if (currentProfileFixedExpenses > 0) {
-                addTransaction(currentProfileFixedExpenses, "Monthly Fixed Expenses", TransactionType.EXPENSE, "Utilities");
-                dialog.dismiss();
+        fixedBtn.setOnClickListener(btn -> {
+            if (profileFixedExp > 0) {
+                record(profileFixedExp, "Monthly Fixed Expenses", TransactionType.EXPENSE, "Utilities");
+                d.dismiss();
             } else {
                 Toast.makeText(requireContext(), "Set fixed expenses in Profile first", Toast.LENGTH_SHORT).show();
             }
         });
 
-        dialog.show();
+        d.show();
     }
 
-    private void addTransaction(double amount, String description, String type, String category) {
-        Transaction transaction = new Transaction();
-        transaction.setAmount(amount);
-        transaction.setType(type);
-        transaction.setCategory(category);
-        transaction.setDescription(description);
-        transaction.setDate(new Date());
+    private void record(double amt, String note, String type, String cat) {
+        Transaction t = new Transaction();
+        t.setAmount(amt);
+        t.setType(type);
+        t.setCategory(cat);
+        t.setDescription(note);
+        t.setDate(new Date());
 
-        viewModel.insertTransaction(transaction);
-        Toast.makeText(requireContext(), description + " recorded!", Toast.LENGTH_SHORT).show();
+        mainVm.addNewTransaction(t);
+        Toast.makeText(requireContext(), note + " recorded!", Toast.LENGTH_SHORT).show();
     }
 
-    private void observeViewModel() {
-        if (viewModel == null) return;
-
-        viewModel.getBalance().observe(getViewLifecycleOwner(), balance -> {
-            if (tvBalance != null) {
-                double val = balance != null ? balance : 0.0;
-                tvBalance.setText(currencyFormat.format(val));
-                updateGoalProgress(val);
-            }
-        });
-
-        viewModel.getTotalIncome().observe(getViewLifecycleOwner(), income -> {
-            if (tvTotalIncome != null) {
-                tvTotalIncome.setText(currencyFormat.format(income != null ? income : 0.0));
-            }
-        });
-
-        viewModel.getTotalExpense().observe(getViewLifecycleOwner(), expense -> {
-            if (tvTotalExpense != null) {
-                tvTotalExpense.setText(currencyFormat.format(expense != null ? expense : 0.0));
-            }
-        });
-
-        viewModel.getIsMarketLoading().observe(getViewLifecycleOwner(), isLoading -> {
-            if (pbMarket != null) {
-                pbMarket.setVisibility(isLoading ? View.VISIBLE : View.GONE);
-            }
-        });
-        
-        viewModel.getMarketData().observe(getViewLifecycleOwner(), quotes -> {
-            if (layoutMarketItems != null && quotes != null) {
-                layoutMarketItems.removeAllViews();
-                int limit = Math.min(quotes.size(), 4);
-                for (int i = 0; i < limit; i++) {
-                    addMarketItem(quotes.get(i));
-                }
-            }
-        });
-
-        viewModel.getUserData().observe(getViewLifecycleOwner(), data -> {
-            if (data != null) {
-                if (data.containsKey("goalAmount")) {
-                    Object goalObj = data.get("goalAmount");
-                    if (goalObj != null) {
-                        double goal = Double.parseDouble(String.valueOf(goalObj));
-                        etGoalAmount.setText(String.valueOf(goal));
-                        Double currentBalance = viewModel.getBalance().getValue();
-                        updateGoalProgress(currentBalance != null ? currentBalance : 0.0);
-                    }
-                }
-                if (data.containsKey("goalEndTime")) {
-                    selectedEndTime = Long.parseLong(String.valueOf(data.get("goalEndTime")));
-                    SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-                    if (tvTargetDate != null) tvTargetDate.setText(getString(R.string.target_date_prefix, sdf.format(new Date(selectedEndTime))));
-                }
-                if (data.containsKey("salary")) {
-                    Object salaryObj = data.get("salary");
-                    if (salaryObj != null) {
-                        currentProfileSalary = Double.parseDouble(String.valueOf(salaryObj));
-                    }
-                }
-                if (data.containsKey("fixedExpenses")) {
-                    Object expObj = data.get("fixedExpenses");
-                    if (expObj != null) {
-                        currentProfileFixedExpenses = Double.parseDouble(String.valueOf(expObj));
-                    }
-                }
-            }
-        });
-    }
-
-    private void addMarketItem(FinnhubResponse quote) {
-        View itemView = LayoutInflater.from(getContext()).inflate(R.layout.item_market, layoutMarketItems, false);
-        TextView tvSymbol = itemView.findViewById(R.id.tv_symbol);
-        TextView tvPrice = itemView.findViewById(R.id.tv_price);
-        TextView tvChange = itemView.findViewById(R.id.tv_change);
-
-        tvSymbol.setText(quote.getSymbol());
-        tvPrice.setText(String.format(Locale.US, "$%.2f", quote.getCurrentPrice()));
-        
-        double percentChange = quote.getPercentChange();
-        tvChange.setText(String.format(Locale.US, "%.2f%%", percentChange));
-        
-        if (percentChange < 0) {
-            tvChange.setTextColor(ContextCompat.getColor(requireContext(), R.color.expense_red));
-        } else {
-            tvChange.setTextColor(ContextCompat.getColor(requireContext(), R.color.income_green));
+    private double parseDouble(Object obj) {
+        if (obj == null) return 0.0;
+        if (obj instanceof Number) return ((Number) obj).doubleValue();
+        try {
+            return Double.parseDouble(String.valueOf(obj));
+        } catch (Exception e) {
+            return 0.0;
         }
-
-        View detailGrid = itemView.findViewById(R.id.gridLayout);
-        if (detailGrid != null) detailGrid.setVisibility(View.GONE);
-        View divider = itemView.findViewById(R.id.market_divider);
-        if (divider != null) divider.setVisibility(View.GONE);
-        
-        layoutMarketItems.addView(itemView);
     }
 
-    private void updateGoalProgress(double currentBalance) {
-        Map<String, Object> data = viewModel.getUserData().getValue();
-        if (data == null || !data.containsKey("goalAmount") || !data.containsKey("goalStartBalance")) return;
+    private long parseLong(Object obj) {
+        if (obj == null) return 0L;
+        if (obj instanceof Number) return ((Number) obj).longValue();
+        try {
+            return (long) Double.parseDouble(String.valueOf(obj));
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    private void startObserving() {
+        if (mainVm == null) return;
+
+        mainVm.getBalance().observe(getViewLifecycleOwner(), b -> {
+            if (balanceTxt != null) {
+                double v = b != null ? b : 0.0;
+                balanceTxt.setText(moneyFmt.format(v));
+                refreshProgress(v);
+            }
+        });
+
+        mainVm.getTotalIncome().observe(getViewLifecycleOwner(), i -> {
+            if (incomeTxt != null) incomeTxt.setText(moneyFmt.format(i != null ? i : 0.0));
+        });
+
+        mainVm.getTotalExpense().observe(getViewLifecycleOwner(), e -> {
+            if (expenseTxt != null) expenseTxt.setText(moneyFmt.format(e != null ? e : 0.0));
+        });
+
+        mainVm.getIsMarketLoading().observe(getViewLifecycleOwner(), loading -> {
+            if (marketProgress != null) marketProgress.setVisibility(loading ? View.VISIBLE : View.GONE);
+        });
+        
+        mainVm.getMarketData().observe(getViewLifecycleOwner(), list -> {
+            if (marketContainer != null && list != null) {
+                marketContainer.removeAllViews();
+                int max = Math.min(list.size(), 4);
+                for (int i = 0; i < max; i++) addSmallMarketView(list.get(i));
+            }
+        });
+
+        mainVm.getUserData().observe(getViewLifecycleOwner(), data -> {
+            if (data != null) {
+                if (data.containsKey(UserRepository.FIELD_GOAL_AMOUNT)) {
+                    double g = parseDouble(data.get(UserRepository.FIELD_GOAL_AMOUNT));
+                    goalInput.setText(String.valueOf(g));
+                    Double current = mainVm.getBalance().getValue();
+                    refreshProgress(current != null ? current : 0.0);
+                }
+                if (data.containsKey(UserRepository.FIELD_GOAL_END_TIME)) {
+                    goalEndTime = parseLong(data.get(UserRepository.FIELD_GOAL_END_TIME));
+                    if (goalEndTime > 0) {
+                        SimpleDateFormat f = new SimpleDateFormat("MMM dd, yyyy", getCurrentLocale());
+                        if (dateTxt != null) dateTxt.setText(getString(R.string.target_date_prefix, f.format(new Date(goalEndTime))));
+                    }
+                }
+                if (data.containsKey(UserRepository.FIELD_SALARY)) profileSalary = parseDouble(data.get(UserRepository.FIELD_SALARY));
+                if (data.containsKey(UserRepository.FIELD_FIXED_EXPENSES)) profileFixedExp = parseDouble(data.get(UserRepository.FIELD_FIXED_EXPENSES));
+            }
+        });
+    }
+
+    private void addSmallMarketView(FinnhubResponse r) {
+        View v = LayoutInflater.from(getContext()).inflate(R.layout.item_market, marketContainer, false);
+        TextView symbol = v.findViewById(R.id.tv_symbol);
+        TextView price = v.findViewById(R.id.tv_price);
+        TextView change = v.findViewById(R.id.tv_change);
+
+        symbol.setText(r.getSymbol());
+        price.setText(String.format(getCurrentLocale(), "$%.2f", r.getCurrentPrice()));
+        
+        double pc = r.getPercentChange();
+        change.setText(String.format(getCurrentLocale(), "%.2f%%", pc));
+        change.setTextColor(ContextCompat.getColor(requireContext(), pc < 0 ? R.color.expense_red : R.color.income_green));
+
+        View grid = v.findViewById(R.id.gridLayout);
+        if (grid != null) grid.setVisibility(View.GONE);
+        View line = v.findViewById(R.id.market_divider);
+        if (line != null) line.setVisibility(View.GONE);
+        
+        marketContainer.addView(v);
+    }
+
+    private void refreshProgress(double balance) {
+        Map<String, Object> data = mainVm.getUserData().getValue();
+        if (data == null || !data.containsKey(UserRepository.FIELD_GOAL_AMOUNT) || !data.containsKey(UserRepository.FIELD_GOAL_START_BALANCE)) return;
         
         try {
-            double goal = Double.parseDouble(String.valueOf(data.get("goalAmount")));
-            double startBalance = Double.parseDouble(String.valueOf(data.get("goalStartBalance")));
+            double goal = parseDouble(data.get(UserRepository.FIELD_GOAL_AMOUNT));
+            double start = parseDouble(data.get(UserRepository.FIELD_GOAL_START_BALANCE));
             
             if (goal > 0) {
-                double netSavings = currentBalance - startBalance;
-                int progress = (int) ((netSavings / goal) * 100);
-                if (progressGoal != null) progressGoal.setProgress(Math.max(0, Math.min(progress, 100)));
-                if (tvGoalProgress != null) tvGoalProgress.setText(getString(R.string.goal_achieved_prefix, Math.max(0, progress)));
+                double saved = balance - start;
+                int p = (int) ((saved / goal) * 100);
+                if (goalBar != null) goalBar.setProgress(Math.max(0, Math.min(p, 100)));
+                if (goalTxt != null) goalTxt.setText(getString(R.string.goal_achieved_prefix, Math.max(0, p)));
             }
-        } catch (NumberFormatException ignored) {}
+        } catch (Exception ignored) {}
     }
 }

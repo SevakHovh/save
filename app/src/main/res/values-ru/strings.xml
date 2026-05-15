@@ -40,7 +40,7 @@
 
     <!-- ИИ Помощник -->
     <string name="ai_assistant_title">ИИ Помощник</string>
-    <string name="ai_placeholder">Спросите меня о чем угодно в ваших финансах...</string>
+    <string name="ai_placeholder">Спросите меня о чем угодно...</string>
     <string name="send">Отправить</string>
     <string name="ai_mode_intelligence">Режим интеллекта</string>
     <string name="ai_mode_scanner">Сканер чеков</string>
@@ -52,9 +52,20 @@
     <string name="ai_scanning_highres">Визуальное сканирование (выс. разр.)...</string>
     <string name="ai_scanning_standard">Визуальное сканирование (стандарт)...</string>
     <string name="ai_extraction_failed">Ошибка нейронного извлечения. Ответ: %s</string>
-    <string name="ai_scan_verified">Нейронное сканирование подтверждено:\nСумма: %s\nКатегория: %s\n\nСкажите \'save it\', чтобы записать.</string>
+    <string name="ai_scan_verified">Нейронное сканирование подтверждено:\nСумма: %s\nКатегория: %s\n\nСкажите \'%s\', чтобы записать.</string>
+    <string name="ai_save_command_hint">сохранить</string>
     <string name="ai_intelligence_label">Интеллект</string>
     <string name="ai_scanner_label">Сканер</string>
+
+    <string name="suggestion_summary">Фин. резюме</string>
+    <string name="suggestion_tips">Советы по экономии</string>
+    <string name="suggestion_status">Прогресс цели</string>
+    <string name="suggestion_market">Пульс рынка</string>
+
+    <string name="prompt_summary">Дай мне краткую сводку моего финансового состояния.</string>
+    <string name="prompt_tips">Какие есть советы, чтобы сэкономить больше денег, исходя из моих трат?</string>
+    <string name="prompt_status">Как продвигаются дела с моей стратегической целью?</string>
+    <string name="prompt_market">Какова текущая ситуация на рынке для отслеживаемых акций?</string>
 
     <!-- Настройки / Тема -->
     <string name="settings">Настройки</string>
@@ -156,7 +167,7 @@
 
     <!-- Expense Categories -->
     <string name="cat_food">Еда</string>
-    <string name="cat_transport">Тրանспорт</string>
+    <string name="cat_transport">Транспорт</string>
     <string name="cat_shopping">Покупки</string>
     <string name="cat_entertainment">Развлечения</string>
     <string name="cat_health">Здоровье</string>

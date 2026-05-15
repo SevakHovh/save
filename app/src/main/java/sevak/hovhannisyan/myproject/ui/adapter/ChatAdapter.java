@@ -20,7 +20,12 @@ import sevak.hovhannisyan.myproject.data.model.ChatMessage;
 
 public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder> {
 
-    private final List<ChatMessage> messages = new ArrayList<>();
+    private List<ChatMessage> messages = new ArrayList<>();
+
+    public void setMessages(List<ChatMessage> newMessages) {
+        this.messages = newMessages;
+        notifyDataSetChanged();
+    }
 
     public void addMessage(ChatMessage message) {
         messages.add(message);

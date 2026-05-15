@@ -35,7 +35,17 @@
         android:id="@+id/aiAssistantFragment"
         android:name="sevak.hovhannisyan.myproject.ui.fragments.AiAssistantFragment"
         android:label="@string/nav_ai_assistant"
-        tools:layout="@layout/fragment_ai_assistant" />
+        tools:layout="@layout/fragment_ai_assistant">
+        <action
+            android:id="@+id/action_aiAssistantFragment_to_chatHistoryFragment"
+            app:destination="@id/chatHistoryFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/chatHistoryFragment"
+        android:name="sevak.hovhannisyan.myproject.ui.fragments.ChatHistoryFragment"
+        android:label="Chat History"
+        tools:layout="@layout/fragment_chat_history" />
 
     <fragment
         android:id="@+id/settingsFragment"

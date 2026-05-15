@@ -291,15 +291,6 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tv_app_version"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/app_version"
-                    android:textColor="@color/on_surface_variant"
-                    android:textSize="14sp" />
-
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

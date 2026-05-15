@@ -40,7 +40,7 @@
 
     <!-- AI Assistant -->
     <string name="ai_assistant_title">AI Assistant</string>
-    <string name="ai_placeholder">Ask me anything about your finances...</string>
+    <string name="ai_placeholder">Ask me anything...</string>
     <string name="send">Send</string>
     <string name="ai_mode_intelligence">Intelligence Mode</string>
     <string name="ai_mode_scanner">Receipt Scanner</string>
@@ -52,9 +52,20 @@
     <string name="ai_scanning_highres">Visual Scanning (High-Res)...</string>
     <string name="ai_scanning_standard">Visual Scanning (Standard)...</string>
     <string name="ai_extraction_failed">Neural extraction failed. Response: %s</string>
-    <string name="ai_scan_verified">Neural Scan Verified:\nAmount: %s\nCategory: %s\n\nSay \'save it\' to log this.</string>
+    <string name="ai_scan_verified">Neural Scan Verified:\nAmount: %s\nCategory: %s\n\nSay \'%s\' to log this.</string>
+    <string name="ai_save_command_hint">save it</string>
     <string name="ai_intelligence_label">Intelligence</string>
     <string name="ai_scanner_label">Scanner</string>
+
+    <string name="suggestion_summary">Financial Summary</string>
+    <string name="suggestion_tips">Savings Tips</string>
+    <string name="suggestion_status">Goal Progress</string>
+    <string name="suggestion_market">Market Pulse</string>
+
+    <string name="prompt_summary">Give me a brief summary of my financial status.</string>
+    <string name="prompt_tips">What are some tips to save more money based on my spending?</string>
+    <string name="prompt_status">How am I doing with my strategic goal?</string>
+    <string name="prompt_market">What is the current market situation for my tracked stocks?</string>
 
     <!-- Settings / Theme -->
     <string name="settings">Settings</string>

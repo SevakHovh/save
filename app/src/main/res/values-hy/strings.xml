@@ -40,7 +40,7 @@
 
     <!-- AI Assistant -->
     <string name="ai_assistant_title">AI Օգնական</string>
-    <string name="ai_placeholder">Հարցրեք ինձ ինչ-որ բան ձեր ֆինանսների մասին...</string>
+    <string name="ai_placeholder">Հարցրեք ինձ ինչ-որ բան...</string>
     <string name="send">Ուղարկել</string>
     <string name="ai_mode_intelligence">Ինտելեկտուալ ռեժիմ</string>
     <string name="ai_mode_scanner">Անդորրագրերի սկաներ</string>
@@ -52,9 +52,20 @@
     <string name="ai_scanning_highres">Վիզուալ սկանավորում (High-Res)...</string>
     <string name="ai_scanning_standard">Վիզուալ սկանավորում (Standard)...</string>
     <string name="ai_extraction_failed">Նեյրոնային արդյունահանումը ձախողվեց: Պատասխան՝ %s</string>
-    <string name="ai_scan_verified">Նեյրոնային սկանավորումը հաստատված է․\nԳումար՝ %s\nԿատեգորիա՝ %s\n\nԱսեք «save it»՝ սա գրանցելու համար:</string>
+    <string name="ai_scan_verified">Նեյրոնային սկանավորումը հաստատված է․\nԳումար՝ %s\nԿատեգորիա՝ %s\n\nԱսեք \'%s\'՝ սա գրանցելու համար:</string>
+    <string name="ai_save_command_hint">պահպանել</string>
     <string name="ai_intelligence_label">Ինտելեկտ</string>
     <string name="ai_scanner_label">Սկաներ</string>
+
+    <string name="suggestion_summary">Ֆին. ամփոփում</string>
+    <string name="suggestion_tips">Խնայողության խորհուրդներ</string>
+    <string name="suggestion_status">Նպատակի ընթացքը</string>
+    <string name="suggestion_market">Շուկայի զարկերակը</string>
+
+    <string name="prompt_summary">Տվեք իմ ֆինանսական վիճակի համառոտ ամփոփումը:</string>
+    <string name="prompt_tips">Ինչ խորհուրդներ կան ավելի շատ գումար խնայելու համար՝ հիմնվելով իմ ծախսերի վրա:</string>
+    <string name="prompt_status">Ինչպե՞ս են գործերը իմ ռազմավարական նպատակի հետ:</string>
+    <string name="prompt_market">Ո՞րն է շուկայի ներկա իրավիճակը իմ հետևած բաժնետոմսերի համար:</string>
 
     <!-- Settings / Theme -->
     <string name="settings">Կարգավորումներ</string>

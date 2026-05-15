@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.PopupMenu;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -18,10 +19,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.chip.ChipGroup;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -43,6 +46,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import sevak.hovhannisyan.myproject.BuildConfig;
 import sevak.hovhannisyan.myproject.R;
+import sevak.hovhannisyan.myproject.api.FinnhubResponse;
 import sevak.hovhannisyan.myproject.api.OpenRouterRequest;
 import sevak.hovhannisyan.myproject.api.OpenRouterResponse;
 import sevak.hovhannisyan.myproject.api.OpenRouterService;
@@ -55,337 +59,392 @@ import sevak.hovhannisyan.myproject.ui.viewmodel.MainViewModel;
 @AndroidEntryPoint
 public class AiAssistantFragment extends Fragment {
 
-    private static final String TAG = "AiAssistantFragment";
+    private static final String MY_TAG = "AiAssistant";
     
-    // KEY SECURED: Pulled from local.properties via BuildConfig
-    private static final String OPENROUTER_API_KEY = BuildConfig.OPENROUTER_API_KEY;
-    
-    // Models
-    private static final String INTELLIGENCE_MODEL = "openai/gpt-4o-mini"; 
-    private static final String VISION_MODEL = "qwen/qwen-2-vl-72b-instruct";
-    private static final String FREE_FALLBACK = "google/gemini-flash-1.5-8b:free"; 
-
-    private enum AiMode {
-        REGULAR, BILL_DETECTOR
-    }
+    private static final String KEY = BuildConfig.OPENROUTER_API_KEY;
+    private static final String CHAT_MODEL = "openai/gpt-4o-mini"; 
+    private static final String FREE_MODEL = "google/gemini-flash-1.5-8b:free"; 
 
     @Inject
-    OpenRouterService openRouterService;
+    OpenRouterService router;
 
-    private MainViewModel viewModel;
-    private RecyclerView rvChatMessages;
-    private EditText etUserInput;
-    private MaterialButton btnSend;
-    private MaterialButton btnAiMode;
-    private ChatAdapter chatAdapter;
-    private NumberFormat currencyFormat;
-    private AiMode currentMode = AiMode.REGULAR;
+    private MainViewModel mainVm;
+    private RecyclerView chatList;
+    private EditText input;
+    private View send;
+    private MaterialButton toggle;
+    private View btnHistory;
+    private ChipGroup chips;
+    private ChatAdapter adapter;
+    private NumberFormat money;
+    
+    private boolean scannerActive = false;
+    private long lastSessionId = -1L;
 
-    private double lastDetectedPrice = 0.0;
-    private String lastDetectedCategory = "Unknown";
+    // Detected receipt data
+    private double foundAmt = 0.0;
+    private String foundCat = "Unknown";
 
-    private Double currentBalance = 0.0;
-    private Double currentIncome = 0.0;
-    private Double currentExpense = 0.0;
-    private List<Transaction> allTransactions = new ArrayList<>();
-    private Map<String, Object> userData;
+    // App data for AI context
+    private Double bal = 0.0;
+    private Double inc = 0.0;
+    private Double exp = 0.0;
+    private List<Transaction> history = new ArrayList<>();
+    private List<FinnhubResponse> marketData = new ArrayList<>();
+    private Map<String, Object> userProfile;
 
-    private final ActivityResultLauncher<String> getContent = registerForActivityResult(
+    private final ActivityResultLauncher<String> imgPicker = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             uri -> {
                 if (uri != null) {
-                    processBillWithAi(uri, VISION_MODEL);
+                    runScan(uri, CHAT_MODEL);
                 }
             }
     );
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_ai_assistant, container, false);
+    public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup container, @Nullable Bundle state) {
+        return inf.inflate(R.layout.fragment_ai_assistant, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
+        super.onViewCreated(view, state);
 
-        viewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
-        currencyFormat = NumberFormat.getCurrencyInstance(Locale.getDefault());
+        mainVm = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+        money = NumberFormat.getCurrencyInstance(Locale.US);
 
-        rvChatMessages = view.findViewById(R.id.rv_chat_messages);
-        etUserInput = view.findViewById(R.id.et_user_input);
-        btnSend = view.findViewById(R.id.btn_send);
-        btnAiMode = view.findViewById(R.id.btn_ai_mode);
+        chatList = view.findViewById(R.id.chat_recycler);
+        input = view.findViewById(R.id.et_message);
+        send = view.findViewById(R.id.btn_send);
+        toggle = view.findViewById(R.id.btn_mode_toggle);
+        chips = view.findViewById(R.id.suggestion_chips);
+        btnHistory = view.findViewById(R.id.btn_chat_history);
 
-        chatAdapter = new ChatAdapter();
-        rvChatMessages.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvChatMessages.setAdapter(chatAdapter);
+        adapter = new ChatAdapter();
+        LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
+        layoutManager.setStackFromEnd(true);
+        chatList.setLayoutManager(layoutManager);
+        chatList.setAdapter(adapter);
 
-        chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_online), false));
+        // Session observation
+        mainVm.getCurrentSessionId().observe(getViewLifecycleOwner(), id -> {
+            if (id == -1L) {
+                // If no session, create a default one
+                mainVm.createNewSession("New Chat " + new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date()), null);
+            }
+            lastSessionId = id;
+        });
 
-        observeData();
-        setupButtons();
+        mainVm.getCurrentSessionMessages().observe(getViewLifecycleOwner(), msgs -> {
+            if (msgs != null) {
+                adapter.setMessages(new ArrayList<>(msgs));
+                if (!msgs.isEmpty()) {
+                    chatList.scrollToPosition(msgs.size() - 1);
+                } else if (lastSessionId != -1L) {
+                    // Only post greeting for a brand new session
+                    post(new ChatMessage(getString(R.string.ai_online), false));
+                }
+            }
+        });
+
+        btnHistory.setOnClickListener(v -> Navigation.findNavController(v).navigate(R.id.action_aiAssistantFragment_to_chatHistoryFragment));
+
+        startSync();
+        handleButtons();
+        handleChips();
     }
 
-    private void setupButtons() {
-        btnAiMode.setOnClickListener(v -> {
-            PopupMenu popup = new PopupMenu(requireContext(), btnAiMode);
-            popup.getMenu().add(getString(R.string.ai_mode_intelligence));
-            popup.getMenu().add(getString(R.string.ai_mode_scanner));
-            popup.setOnMenuItemClickListener(item -> {
+    private void handleButtons() {
+        toggle.setOnClickListener(v -> {
+            PopupMenu pop = new PopupMenu(requireContext(), toggle);
+            pop.getMenu().add(getString(R.string.ai_mode_intelligence));
+            pop.getMenu().add(getString(R.string.ai_mode_scanner));
+            pop.setOnMenuItemClickListener(item -> {
                 if (item.getTitle().equals(getString(R.string.ai_mode_intelligence))) {
-                    setAiMode(AiMode.REGULAR);
+                    setMode(false);
                 } else {
-                    setAiMode(AiMode.BILL_DETECTOR);
+                    setMode(true);
                 }
                 return true;
             });
-            popup.show();
+            pop.show();
         });
 
-        btnSend.setOnClickListener(v -> {
-            if (currentMode == AiMode.REGULAR) {
-                handleAiIntelligence();
+        send.setOnClickListener(v -> {
+            if (!scannerActive) {
+                String text = input.getText().toString().trim();
+                talkToAi(text);
             } else {
-                getContent.launch("image/*");
+                imgPicker.launch("image/*");
             }
         });
     }
 
-    private void setAiMode(AiMode mode) {
-        currentMode = mode;
-        if (mode == AiMode.REGULAR) {
-            btnAiMode.setText(R.string.ai_intelligence_label);
-            btnAiMode.setIconResource(android.R.drawable.ic_menu_info_details);
-            etUserInput.setVisibility(View.VISIBLE);
-            btnSend.setText(R.string.ai_ask);
+    private void handleChips() {
+        if (chips == null) return;
+        
+        View summary = chips.findViewById(R.id.chip_summary);
+        if (summary != null) summary.setOnClickListener(v -> talkToAi(getString(R.string.prompt_summary)));
+        
+        View tips = chips.findViewById(R.id.chip_tips);
+        if (tips != null) tips.setOnClickListener(v -> talkToAi(getString(R.string.prompt_tips)));
+        
+        View status = chips.findViewById(R.id.chip_status);
+        if (status != null) status.setOnClickListener(v -> talkToAi(getString(R.string.prompt_status)));
+        
+        View market = chips.findViewById(R.id.chip_market);
+        if (market != null) market.setOnClickListener(v -> talkToAi(getString(R.string.prompt_market)));
+    }
+
+    private void setMode(boolean scan) {
+        scannerActive = scan;
+        if (!scan) {
+            toggle.setIconResource(android.R.drawable.ic_menu_info_details);
+            input.setVisibility(View.VISIBLE);
+            if (chips != null) chips.setVisibility(View.VISIBLE);
         } else {
-            btnAiMode.setText(R.string.ai_scanner_label);
-            btnAiMode.setIconResource(android.R.drawable.ic_menu_camera);
-            etUserInput.setVisibility(View.GONE);
-            btnSend.setText(R.string.ai_scan);
+            toggle.setIconResource(android.R.drawable.ic_menu_camera);
+            input.setVisibility(View.GONE);
+            if (chips != null) chips.setVisibility(View.GONE);
         }
     }
 
-    private void handleAiIntelligence() {
-        String userInput = etUserInput.getText().toString().trim();
-        if (userInput.isEmpty()) return;
+    private void talkToAi(String text) {
+        if (text.isEmpty()) return;
 
-        chatAdapter.addMessage(new ChatMessage(userInput, true));
-        etUserInput.setText("");
+        post(new ChatMessage(text, true));
+        input.setText("");
         
-        if ((userInput.toLowerCase().contains("save it") || userInput.toLowerCase().contains("add it")) && lastDetectedPrice > 0) {
-            saveDetectedBill();
+        String low = text.toLowerCase().trim();
+        if ((isMatch(low, "save it") || isMatch(low, "add it") 
+                || isMatch(low, "պահպանել") || isMatch(low, "ավելացնել")
+                || isMatch(low, "сохранить") || isMatch(low, "добавить")) 
+                && foundAmt > 0) {
+            saveResult();
             return;
         }
 
-        chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_synchronizing), false));
-        rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
-
-        runMainBrain(userInput, INTELLIGENCE_MODEL);
+        post(new ChatMessage(getString(R.string.ai_synchronizing), false));
+        callRouter(text, CHAT_MODEL);
     }
 
-    private void saveDetectedBill() {
+    private boolean isMatch(String s, String target) {
+        if (s.contains(target)) return true;
+        if (target.length() > 4) {
+            String root = target.substring(0, target.length() - 2);
+            return s.contains(root);
+        }
+        return false;
+    }
+
+    private void saveResult() {
         Transaction t = new Transaction();
-        t.setAmount(lastDetectedPrice);
-        t.setCategory(lastDetectedCategory);
+        t.setAmount(foundAmt);
+        t.setCategory(foundCat);
         t.setType(TransactionType.EXPENSE);
         t.setDate(new Date());
-        t.setDescription("SAVE AI Scan (" + lastDetectedCategory + ")");
+        t.setDescription("SAVE AI Scan (" + foundCat + ")");
         
-        viewModel.insertTransaction(t);
+        mainVm.addNewTransaction(t);
         
-        lastDetectedPrice = 0.0;
-        chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_ledger_updated), false));
-        rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
+        foundAmt = 0.0;
+        post(new ChatMessage(getString(R.string.ai_ledger_updated), false));
     }
 
-    private void runMainBrain(String userInput, String modelId) {
+    private void callRouter(String p, String model) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US);
-        String dateStr = sdf.format(new Date());
+        String date = sdf.format(new Date());
         
-        StringBuilder historyBuilder = new StringBuilder();
-        historyBuilder.append("USER FINANCIAL HISTORY:\n");
-        
-        // Include recent transactions for context
-        int count = 0;
-        List<Transaction> recent = new ArrayList<>(allTransactions);
-        Collections.reverse(recent); // Most recent first
-        for (Transaction t : recent) {
-            if (count >= 15) break; // Limit to last 15 for prompt size
-            historyBuilder.append(String.format("- %s: %s %.2f (%s)\n", 
-                sdf.format(t.getDate()), t.getType(), t.getAmount(), t.getCategory()));
-            count++;
+        StringBuilder hist = new StringBuilder("TRANSACTION HISTORY:\n");
+        int c = 0;
+        List<Transaction> list = new ArrayList<>(history);
+        Collections.reverse(list);
+        for (Transaction t : list) {
+            if (c >= 20) break;
+            hist.append(String.format("- %s: %s %.2f (%s) - %s\n", 
+                sdf.format(t.getDate()), t.getType(), t.getAmount(), t.getCategory(), t.getDescription()));
+            c++;
         }
 
-        String userContext = "N/A";
-        if (userData != null) {
-            userContext = String.format("Salary: %s, Fixed Expenses: %s, Goal: %s",
-                userData.getOrDefault("salary", 0),
-                userData.getOrDefault("fixedExpenses", 0),
-                userData.getOrDefault("goalAmount", 0));
+        StringBuilder pulse = new StringBuilder("\nMARKET PULSE (LIVE PRICES):\n");
+        if (marketData != null && !marketData.isEmpty()) {
+            for (FinnhubResponse q : marketData) {
+                pulse.append(String.format("- %s: $%.2f (Change: %.2f%%)\n", q.getSymbol(), q.getCurrentPrice(), q.getPercentChange()));
+            }
+        } else {
+            pulse.append("- Live market data is currently unavailable.\n");
         }
 
-        String systemPrompt = String.format(Locale.US, 
-            "You are a Professional Financial Assistant. " +
-            "CURRENT STATUS: [Date: %s] [Balance: %.2f] [Total Inc: %.2f] [Total Exp: %.2f]\n" +
-            "USER PROFILE: %s\n" +
-            "%s\n" +
-            "Analyze the user's data and provide accurate, personalized financial advice. Be concise but insightful. Respond in the user's language if possible (English or Russian).",
-            dateStr, currentBalance, currentIncome, currentExpense, userContext, historyBuilder.toString());
+        String user = "N/A";
+        if (userProfile != null) {
+            user = String.format("Salary: %s, Fixed: %s, Goal: %s",
+                userProfile.getOrDefault("salary", 0),
+                userProfile.getOrDefault("fixedExpenses", 0),
+                userProfile.getOrDefault("goalAmount", 0));
+        }
+
+        String prompt = String.format(Locale.US, 
+            "Professional Advisor. Current Status: [Date: %s] [Bal: %.2f] [Inc: %.2f] [Exp: %.2f]\n" +
+            "Profile: %s\n%s\n%s\n" +
+            "Respond in the same language as the user. Use the market pulse info if asked about stocks/crypto. Be helpful.",
+            date, bal, inc, exp, user, hist.toString(), pulse.toString());
         
-        List<OpenRouterRequest.Message> messages = new ArrayList<>();
-        messages.add(new OpenRouterRequest.Message("system", systemPrompt));
-        messages.add(new OpenRouterRequest.Message("user", userInput));
+        List<OpenRouterRequest.Message> msgs = new ArrayList<>();
+        msgs.add(new OpenRouterRequest.Message("system", prompt));
+        
+        List<ChatMessage> chatContext = mainVm.getCurrentSessionMessages().getValue();
+        if (chatContext != null) {
+            int start = Math.max(0, chatContext.size() - 6);
+            for (int i = start; i < chatContext.size(); i++) {
+                ChatMessage cm = chatContext.get(i);
+                if (cm.getType() == ChatMessage.Type.TEXT && !cm.getText().equals(getString(R.string.ai_synchronizing))) {
+                    msgs.add(new OpenRouterRequest.Message(cm.isUser() ? "user" : "assistant", cm.getText()));
+                }
+            }
+        }
+        
+        msgs.add(new OpenRouterRequest.Message("user", p));
 
-        OpenRouterRequest request = new OpenRouterRequest(modelId, messages);
+        OpenRouterRequest req = new OpenRouterRequest(model, msgs);
 
-        openRouterService.analyzeBill("Bearer " + OPENROUTER_API_KEY, "https://saveapp.ai", "SAVE AI", request)
+        router.analyzeBill("Bearer " + KEY, "https://saveapp.ai", "SAVE AI", req)
             .enqueue(new Callback<OpenRouterResponse>() {
                 @Override
-                public void onResponse(@NonNull Call<OpenRouterResponse> call, @NonNull Response<OpenRouterResponse> response) {
-                    if (response.isSuccessful() && response.body() != null && !response.body().getChoices().isEmpty()) {
-                        displayFinalAnswer(response.body().getChoices().get(0).getMessage().getContent());
-                    } else if (response.code() >= 400 && !modelId.equals(FREE_FALLBACK)) {
-                        Log.w(TAG, "Primary Core busy. Switching to Reserve Link...");
-                        runMainBrain(userInput, FREE_FALLBACK);
+                public void onResponse(@NonNull Call<OpenRouterResponse> call, @NonNull Response<OpenRouterResponse> res) {
+                    if (res.isSuccessful() && res.body() != null && !res.body().getChoices().isEmpty()) {
+                        finish(res.body().getChoices().get(0).getMessage().getContent());
+                    } else if (res.code() >= 400 && !model.equals(FREE_MODEL)) {
+                        callRouter(p, FREE_MODEL);
                     } else {
-                        handleErrorResponse(response);
+                        toast("Server error: " + res.code());
                     }
                 }
 
                 @Override
                 public void onFailure(@NonNull Call<OpenRouterResponse> call, @NonNull Throwable t) {
-                    if (!modelId.equals(FREE_FALLBACK)) runMainBrain(userInput, FREE_FALLBACK);
-                    else handleError("Strategic core link failed: " + t.getMessage());
+                    if (!model.equals(FREE_MODEL)) callRouter(p, FREE_MODEL);
+                    else toast("Connection failed.");
                 }
             });
     }
 
-    private void handleErrorResponse(Response<?> response) {
-        String errorBody = "Unknown error";
-        try {
-            if (response.errorBody() != null) {
-                errorBody = response.errorBody().string();
+    private void finish(String s) {
+        if (getActivity() == null) return;
+        getActivity().runOnUiThread(() -> {
+            mainVm.removeLastChatMessage();
+            post(new ChatMessage(s, false));
+        });
+    }
+
+    private void runScan(Uri uri, String model) {
+        if (getActivity() == null) return;
+        
+        getActivity().runOnUiThread(() -> {
+            if (model.equals(CHAT_MODEL)) {
+                post(new ChatMessage(getString(R.string.ai_scanning_highres), false));
             }
-        } catch (Exception ignored) {}
-        
-        Log.e(TAG, "API Error: " + response.code() + " - " + errorBody);
-        
-        String msg;
-        if (response.code() == 401) msg = "Authentication failed. Ensure key is in local.properties.";
-        else if (response.code() == 402) msg = "Neural Credits Depleted (402). Check OpenRouter limit.";
-        else if (response.code() == 429) msg = "Neural bandwidth exceeded. Retrying...";
-        else msg = "System Alert " + response.code();
-        
-        handleError(msg);
-    }
-
-    private void displayFinalAnswer(String answer) {
-        if (getActivity() == null) return;
-        getActivity().runOnUiThread(() -> {
-            if (chatAdapter.getItemCount() > 0) chatAdapter.removeLastMessage();
-            chatAdapter.addMessage(new ChatMessage(answer, false));
-            rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
         });
-    }
-
-    private void handleError(String msg) {
-        if (getActivity() == null) return;
-        getActivity().runOnUiThread(() -> {
-            if (chatAdapter.getItemCount() > 0) chatAdapter.removeLastMessage();
-            chatAdapter.addMessage(new ChatMessage(msg, false));
-            rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
-        });
-    }
-
-    private void processBillWithAi(Uri uri, String modelId) {
-        if (modelId.equals(VISION_MODEL)) {
-            chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_scanning_highres), false));
-        } else {
-            chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_scanning_standard), false));
-        }
-        rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
         
         try {
             InputStream is = requireContext().getContentResolver().openInputStream(uri);
-            Bitmap bitmap = BitmapFactory.decodeStream(is);
-            if (bitmap == null) {
-                handleError("Failed to decode image.");
+            Bitmap b = BitmapFactory.decodeStream(is);
+            if (is != null) is.close();
+            
+            if (b == null) {
+                post(new ChatMessage("Bad image file.", false));
                 return;
             }
             
-            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 800, (int)(800.0 * bitmap.getHeight() / bitmap.getWidth()), true);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos);
-            String base64Image = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
+            int target = 1024;
+            Bitmap sm = Bitmap.createScaledBitmap(b, target, (int)((float)target * b.getHeight() / b.getWidth()), true);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            sm.compress(Bitmap.CompressFormat.JPEG, 80, out);
+            String b64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
 
-            List<OpenRouterRequest.Content> contents = new ArrayList<>();
-            contents.add(OpenRouterRequest.Content.text("Identify total amount and primary category from this receipt. Return RAW JSON ONLY: {\"total\":0.0,\"category\":\"\"}"));
-            contents.add(OpenRouterRequest.Content.image(base64Image));
+            String cats = String.format("Cats: %s, %s, %s, %s, %s, %s",
+                    getString(R.string.cat_food), getString(R.string.cat_transport), getString(R.string.cat_shopping),
+                    getString(R.string.cat_entertainment), getString(R.string.cat_health), getString(R.string.cat_utilities));
 
-            OpenRouterRequest request = new OpenRouterRequest(modelId, 
-                Collections.singletonList(new OpenRouterRequest.Message("user", contents)));
+            List<OpenRouterRequest.Content> list = new ArrayList<>();
+            String instructions = "Receipt scan. JSON only: {\"total\": 0.0, \"category\": \"Cat\"}. EN, RU, AM. Keywords: 'Ընդամենը', 'Գումար', 'Итого', 'Total'. Categories: " + cats;
+            
+            list.add(OpenRouterRequest.Content.text(instructions));
+            list.add(OpenRouterRequest.Content.image(b64));
 
-            openRouterService.analyzeBill("Bearer " + OPENROUTER_API_KEY, "https://saveapp.ai", "SAVE AI", request)
+            OpenRouterRequest req = new OpenRouterRequest(model, 
+                Collections.singletonList(new OpenRouterRequest.Message("user", list)));
+
+            router.analyzeBill("Bearer " + KEY, "https://saveapp.ai", "SAVE AI", req)
                 .enqueue(new Callback<OpenRouterResponse>() {
                     @Override
-                    public void onResponse(@NonNull Call<OpenRouterResponse> call, @NonNull Response<OpenRouterResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && !response.body().getChoices().isEmpty()) {
-                            parseAiJsonResponse(response.body().getChoices().get(0).getMessage().getContent());
-                        } else if (response.code() >= 400 && !modelId.equals(FREE_FALLBACK)) {
-                            Log.w(TAG, "Primary Scanner busy. Falling back...");
-                            processBillWithAi(uri, FREE_FALLBACK);
+                    public void onResponse(@NonNull Call<OpenRouterResponse> call, @NonNull Response<OpenRouterResponse> res) {
+                        if (res.isSuccessful() && res.body() != null && !res.body().getChoices().isEmpty()) {
+                            parse(res.body().getChoices().get(0).getMessage().getContent());
                         } else {
-                            handleErrorResponse(response);
+                            if (!model.equals(FREE_MODEL)) runScan(uri, FREE_MODEL);
+                            else toast("Scan failed.");
                         }
                     }
 
                     @Override
                     public void onFailure(@NonNull Call<OpenRouterResponse> call, @NonNull Throwable t) {
-                        if (!modelId.equals(FREE_FALLBACK)) processBillWithAi(uri, FREE_FALLBACK);
-                        else handleError("Visual link failure: " + t.getMessage());
+                        if (!model.equals(FREE_MODEL)) runScan(uri, FREE_MODEL);
+                        else toast("Link error.");
                     }
                 });
         } catch (Exception e) {
-            handleError("Scanner core error: " + e.getMessage());
+            toast("Error.");
         }
     }
 
-    private void parseAiJsonResponse(String content) {
+    private void parse(String s) {
         if (getActivity() == null) return;
         getActivity().runOnUiThread(() -> {
             try {
-                if (chatAdapter.getItemCount() > 0) chatAdapter.removeLastMessage();
+                mainVm.removeLastChatMessage();
                 
-                String jsonPart = content;
-                if (content.contains("```json")) {
-                    jsonPart = content.substring(content.indexOf("```json") + 7, content.lastIndexOf("```"));
-                } else if (content.contains("{") && content.contains("}")) {
-                    jsonPart = content.substring(content.indexOf("{"), content.lastIndexOf("}") + 1);
+                String part = s;
+                if (s.contains("```json")) {
+                    part = s.substring(s.indexOf("```json") + 7, s.lastIndexOf("```"));
+                } else if (s.contains("{") && s.contains("}")) {
+                    part = s.substring(s.indexOf("{"), s.lastIndexOf("}") + 1);
                 }
                 
-                JSONObject json = new JSONObject(jsonPart.trim());
-                lastDetectedPrice = json.optDouble("total", 0.0);
-                lastDetectedCategory = json.optString("category", "Unknown");
+                JSONObject jobj = new JSONObject(part.trim());
+                foundAmt = jobj.optDouble("total", 0.0);
+                foundCat = jobj.optString("category", "Unknown");
                 
-                String message = getString(R.string.ai_scan_verified, currencyFormat.format(lastDetectedPrice), lastDetectedCategory);
-                chatAdapter.addMessage(new ChatMessage(message, false));
-                rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
+                String hint = getString(R.string.ai_save_command_hint);
+                String msg = getString(R.string.ai_scan_verified, money.format(foundAmt), foundCat, hint);
+                post(new ChatMessage(msg, false));
             } catch (Exception e) {
-                chatAdapter.addMessage(new ChatMessage(getString(R.string.ai_extraction_failed, content), false));
-                rvChatMessages.smoothScrollToPosition(chatAdapter.getItemCount() - 1);
+                post(new ChatMessage("Error parsing.", false));
             }
         });
     }
 
-    private void observeData() {
-        viewModel.getBalance().observe(getViewLifecycleOwner(), balance -> currentBalance = balance != null ? balance : 0.0);
-        viewModel.getTotalIncome().observe(getViewLifecycleOwner(), income -> currentIncome = income != null ? income : 0.0);
-        viewModel.getTotalExpense().observe(getViewLifecycleOwner(), expense -> currentExpense = expense != null ? expense : 0.0);
-        viewModel.getUserData().observe(getViewLifecycleOwner(), data -> userData = data);
-        viewModel.getAllTransactions().observe(getViewLifecycleOwner(), transactions -> {
-            if (transactions != null) allTransactions = transactions;
+    private void post(ChatMessage m) {
+        mainVm.addChatMessage(m);
+    }
+
+    private void toast(String s) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> Toast.makeText(getContext(), s, Toast.LENGTH_SHORT).show());
+        }
+    }
+
+    private void startSync() {
+        mainVm.getBalance().observe(getViewLifecycleOwner(), val -> bal = val != null ? val : 0.0);
+        mainVm.getTotalIncome().observe(getViewLifecycleOwner(), val -> inc = val != null ? val : 0.0);
+        mainVm.getTotalExpense().observe(getViewLifecycleOwner(), val -> exp = val != null ? val : 0.0);
+        mainVm.getUserData().observe(getViewLifecycleOwner(), data -> userProfile = data);
+        mainVm.getAllTransactions().observe(getViewLifecycleOwner(), list -> {
+            if (list != null) history = list;
+        });
+        mainVm.getMarketData().observe(getViewLifecycleOwner(), q -> {
+            if (q != null) marketData = q;
         });
     }
 }
