@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -13,12 +15,15 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -28,8 +33,11 @@ import java.util.Map;
 
 import dagger.hilt.android.AndroidEntryPoint;
 import sevak.hovhannisyan.myproject.R;
+import sevak.hovhannisyan.myproject.data.model.RecurringTransaction;
 import sevak.hovhannisyan.myproject.data.model.Transaction;
+import sevak.hovhannisyan.myproject.data.model.TransactionType;
 import sevak.hovhannisyan.myproject.databinding.FragmentProfileBinding;
+import sevak.hovhannisyan.myproject.ui.adapter.RecurringTransactionAdapter;
 import sevak.hovhannisyan.myproject.ui.viewmodel.MainViewModel;
 
 @AndroidEntryPoint
@@ -37,6 +45,7 @@ public class ProfileFragment extends Fragment {
 
     private FragmentProfileBinding binding;
     private MainViewModel mainVm;
+    private RecurringTransactionAdapter recurringAdapter;
     
     private String timeFilter = "Week";
     private List<Transaction> fullList = new ArrayList<>();
@@ -54,18 +63,25 @@ public class ProfileFragment extends Fragment {
         mainVm = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
 
         setupChartStyle();
+        setupRecurringList();
         initObservers();
         initListeners();
+    }
+
+    private void setupRecurringList() {
+        recurringAdapter = new RecurringTransactionAdapter(rt -> {
+            mainVm.deleteRecurringTransaction(rt);
+        });
+        binding.rvRecurringTransactions.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvRecurringTransactions.setAdapter(recurringAdapter);
     }
 
     private void initListeners() {
         binding.btnSaveFinancialInfo.setOnClickListener(v -> {
             String s = binding.etSalary.getText().toString();
-            String e = binding.etFixedExpenses.getText().toString();
             try {
                 double sal = s.isEmpty() ? 0 : Double.parseDouble(s);
-                double exp = e.isEmpty() ? 0 : Double.parseDouble(e);
-                mainVm.saveProfileInfo(sal, exp);
+                mainVm.saveProfileInfo(sal, 0); 
                 Toast.makeText(requireContext(), R.string.financial_info_saved, Toast.LENGTH_SHORT).show();
             } catch (Exception err) {
                 Toast.makeText(requireContext(), R.string.invalid_numbers, Toast.LENGTH_SHORT).show();
@@ -75,7 +91,6 @@ public class ProfileFragment extends Fragment {
         binding.btnSettingsProfile.setOnClickListener(v -> 
             Navigation.findNavController(v).navigate(R.id.settingsFragment));
 
-        // Fixed: Updated to match the ChipGroup and Chip IDs in fragment_profile.xml
         binding.chipGroupOverview.setOnCheckedStateChangeListener((group, checkedIds) -> {
             if (!checkedIds.isEmpty()) {
                 int id = checkedIds.get(0);
@@ -85,8 +100,70 @@ public class ProfileFragment extends Fragment {
                 updateChart(fullList);
             }
         });
+
+        binding.btnAddRecurring.setOnClickListener(v -> showAddRecurringDialog());
+    }
+
+    private void showAddRecurringDialog() {
+        View v = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_recurring, null);
+        TextInputEditText etDesc = v.findViewById(R.id.et_recurring_desc);
+        TextInputEditText etAmount = v.findViewById(R.id.et_recurring_amount);
+        TextInputEditText etPeriod = v.findViewById(R.id.et_recurring_period);
+        AutoCompleteTextView spinnerType = v.findViewById(R.id.spinner_type);
+        AutoCompleteTextView spinnerCat = v.findViewById(R.id.spinner_category);
+
+        String typeIncome = getString(R.string.income_type);
+        String typeExpense = getString(R.string.expense_type);
+        String[] types = {typeExpense, typeIncome};
         
-        // Removed references to btnPersonalInfo and layoutPersonalInfo as they don't exist in fragment_profile.xml
+        String[] cats = {
+            getString(R.string.cat_utilities), getString(R.string.cat_debt), getString(R.string.cat_taxes), 
+            getString(R.string.cat_food), getString(R.string.cat_transport), 
+            getString(R.string.cat_shopping), getString(R.string.cat_other)
+        };
+
+        spinnerType.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, types));
+        spinnerCat.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, cats));
+        
+        spinnerType.setText(typeExpense, false);
+        spinnerCat.setText(getString(R.string.cat_other), false);
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.add_fixed_transaction)
+                .setView(v)
+                .setPositiveButton(R.string.add, (dialog, which) -> {
+                    String desc = etDesc.getText().toString().trim();
+                    String amtStr = etAmount.getText().toString().trim();
+                    String periodStr = etPeriod.getText().toString().trim();
+                    String selectedType = spinnerType.getText().toString();
+                    String cat = spinnerCat.getText().toString();
+
+                    if (desc.isEmpty() || amtStr.isEmpty() || periodStr.isEmpty()) {
+                        Toast.makeText(requireContext(), R.string.error_fill_all, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    try {
+                        RecurringTransaction rt = new RecurringTransaction();
+                        rt.setDescription(desc);
+                        rt.setAmount(Double.parseDouble(amtStr));
+                        rt.setPeriodDays(Integer.parseInt(periodStr));
+                        
+                        // Map localized string back to constant
+                        if (selectedType.equals(typeIncome)) {
+                            rt.setType(TransactionType.INCOME);
+                        } else {
+                            rt.setType(TransactionType.EXPENSE);
+                        }
+                        
+                        rt.setCategory(cat);
+                        mainVm.addRecurringTransaction(rt);
+                    } catch (Exception e) {
+                        Toast.makeText(requireContext(), R.string.invalid_numbers, Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void setupChartStyle() {
@@ -113,9 +190,7 @@ public class ProfileFragment extends Fragment {
         mainVm.getUserData().observe(getViewLifecycleOwner(), data -> {
             if (data != null) {
                 Object s = data.get("salary");
-                Object e = data.get("fixedExpenses");
                 if (s != null) binding.etSalary.setText(String.valueOf(s));
-                if (e != null) binding.etFixedExpenses.setText(String.valueOf(e));
             }
         });
 
@@ -123,6 +198,12 @@ public class ProfileFragment extends Fragment {
             if (list != null) {
                 fullList = list;
                 updateChart(list);
+            }
+        });
+
+        mainVm.getRecurringTransactions().observe(getViewLifecycleOwner(), list -> {
+            if (list != null) {
+                recurringAdapter.setList(list);
             }
         });
     }
@@ -139,7 +220,7 @@ public class ProfileFragment extends Fragment {
         boolean hasData = false;
 
         for (Transaction t : list) {
-            if ("EXPENSE".equals(t.getType()) && t.getDate().getTime() >= threshold) {
+            if (TransactionType.EXPENSE.equals(t.getType()) && t.getDate().getTime() >= threshold) {
                 hasData = true;
                 categoryMap.put(t.getCategory(), categoryMap.getOrDefault(t.getCategory(), 0.0) + t.getAmount());
             }

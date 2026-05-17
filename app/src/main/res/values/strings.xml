@@ -38,6 +38,21 @@
     <string name="categories">Categories</string>
     <string name="add_transactions_stats">Add transactions to see statistics</string>
 
+    <!-- Fixed Transactions -->
+    <string name="recurring_transactions">Fixed Transactions</string>
+    <string name="add_fixed_transaction">Add Fixed Transaction</string>
+    <string name="description_hint">Description (e.g. Rent, Taxes)</string>
+    <string name="amount_hint">Amount</string>
+    <string name="period_days_hint">Period in days (e.g. 30)</string>
+    <string name="type_hint">Type</string>
+    <string name="category_hint">Category</string>
+    <string name="income_type">INCOME</string>
+    <string name="expense_type">EXPENSE</string>
+    <string name="cat_debt">Debt</string>
+    <string name="cat_taxes">Taxes</string>
+    <string name="period_format">Every %d days</string>
+    <string name="error_fill_all">Please fill all fields</string>
+
     <!-- AI Assistant -->
     <string name="ai_assistant_title">AI Assistant</string>
     <string name="ai_placeholder">Ask me anything...</string>

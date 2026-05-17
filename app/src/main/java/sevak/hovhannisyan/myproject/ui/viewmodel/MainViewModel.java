@@ -26,8 +26,10 @@ import sevak.hovhannisyan.myproject.api.FinnhubService;
 import sevak.hovhannisyan.myproject.api.FreeCryptoService;
 import sevak.hovhannisyan.myproject.data.model.ChatMessage;
 import sevak.hovhannisyan.myproject.data.model.ChatSession;
+import sevak.hovhannisyan.myproject.data.model.RecurringTransaction;
 import sevak.hovhannisyan.myproject.data.model.Transaction;
 import sevak.hovhannisyan.myproject.data.repository.ChatRepository;
+import sevak.hovhannisyan.myproject.data.repository.RecurringTransactionRepository;
 import sevak.hovhannisyan.myproject.data.repository.TransactionRepository;
 import sevak.hovhannisyan.myproject.data.repository.UserRepository;
 
@@ -37,6 +39,7 @@ public class MainViewModel extends ViewModel {
     private final TransactionRepository transactionRepo;
     private final UserRepository userRepo;
     private final ChatRepository chatRepo;
+    private final RecurringTransactionRepository recurringRepo;
     
     private final FinnhubService finnhubApi;
     private final CoinGeckoService geckoApi;
@@ -57,6 +60,8 @@ public class MainViewModel extends ViewModel {
     private final MutableLiveData<Long> currentSessionId = new MutableLiveData<>(-1L);
     private final LiveData<List<ChatMessage>> currentSessionMessages;
     
+    private final LiveData<List<RecurringTransaction>> recurringTransactions;
+    
     private final MutableLiveData<Boolean> aiIsTyping = new MutableLiveData<>(false);
     
     private static final String API_KEY = "d701p69r01qjh1odtingd701p69r01qjh1odtio0";
@@ -70,10 +75,12 @@ public class MainViewModel extends ViewModel {
 
     @Inject
     public MainViewModel(TransactionRepository repository, UserRepository userRepository, ChatRepository chatRepository,
+                         RecurringTransactionRepository recurringRepository,
                          FinnhubService finnhubService, CoinGeckoService coinGeckoService, FreeCryptoService cryptoService) {
         this.transactionRepo = repository;
         this.userRepo = userRepository;
         this.chatRepo = chatRepository;
+        this.recurringRepo = recurringRepository;
         this.finnhubApi = finnhubService;
         this.geckoApi = coinGeckoService;
         this.cryptoApi = cryptoService;
@@ -96,6 +103,8 @@ public class MainViewModel extends ViewModel {
             }
             return chatRepo.getMessagesForSession(id);
         });
+        
+        recurringTransactions = Transformations.switchMap(uid, recurringRepo::getActiveRecurringTransactions);
     }
     
     public LiveData<List<Transaction>> getAllTransactions() { return transactionsList; }
@@ -142,6 +151,19 @@ public class MainViewModel extends ViewModel {
 
     public void deleteSession(long sessionId) {
         chatRepo.deleteSession(sessionId);
+    }
+
+    // Recurring Transactions
+    public LiveData<List<RecurringTransaction>> getRecurringTransactions() { return recurringTransactions; }
+    public void addRecurringTransaction(RecurringTransaction rt) {
+        String myId = uid.getValue();
+        if (myId != null) {
+            rt.setUserId(myId);
+            recurringRepo.insert(rt);
+        }
+    }
+    public void deleteRecurringTransaction(RecurringTransaction rt) {
+        recurringRepo.delete(rt);
     }
 
     // Market data methods

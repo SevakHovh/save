@@ -74,6 +74,10 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation(libs.mpandroidchart)
+    
+    // WorkManager for recurring tasks
+    implementation("androidx.work:work-runtime:2.9.1")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

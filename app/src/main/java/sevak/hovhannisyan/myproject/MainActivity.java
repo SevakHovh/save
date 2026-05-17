@@ -71,8 +71,16 @@ public class MainActivity extends AppCompatActivity {
         
         if (navHostFragment != null) {
             navController = navHostFragment.getNavController();
-            // Link the bottom nav with the controller
-            NavigationUI.setupWithNavController(binding.bottomNavigation, navController);
+            
+            // Handle Bottom Navigation if it exists in the current layout
+            if (binding.bottomNavigation != null) {
+                NavigationUI.setupWithNavController(binding.bottomNavigation, navController);
+            }
+            
+            // Handle Navigation Rail if it exists (for tablets/large screens)
+            if (binding.navigationRail != null) {
+                NavigationUI.setupWithNavController(binding.navigationRail, navController);
+            }
         }
     }
 

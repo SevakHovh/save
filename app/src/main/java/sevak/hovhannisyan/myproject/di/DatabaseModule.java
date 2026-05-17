@@ -12,6 +12,7 @@ import dagger.hilt.InstallIn;
 import dagger.hilt.android.qualifiers.ApplicationContext;
 import dagger.hilt.components.SingletonComponent;
 import sevak.hovhannisyan.myproject.data.dao.ChatDao;
+import sevak.hovhannisyan.myproject.data.dao.RecurringTransactionDao;
 import sevak.hovhannisyan.myproject.data.dao.TransactionDao;
 import sevak.hovhannisyan.myproject.data.db.AppDatabase;
 
@@ -37,5 +38,11 @@ public class DatabaseModule {
     @Singleton
     public ChatDao provideChatDao(AppDatabase appDatabase) {
         return appDatabase.chatDao();
+    }
+
+    @Provides
+    @Singleton
+    public RecurringTransactionDao provideRecurringTransactionDao(AppDatabase appDatabase) {
+        return appDatabase.recurringTransactionDao();
     }
 }

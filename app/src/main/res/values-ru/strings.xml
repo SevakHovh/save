@@ -38,6 +38,21 @@
     <string name="categories">Категории</string>
     <string name="add_transactions_stats">Добавьте транзакции, чтобы увидеть статистику</string>
 
+    <!-- Фиксированные транзакции -->
+    <string name="recurring_transactions">Фиксированные транзакции</string>
+    <string name="add_fixed_transaction">Добавить фикс. транзакцию</string>
+    <string name="description_hint">Описание (напр. Аренда, Налоги)</string>
+    <string name="amount_hint">Сумма</string>
+    <string name="period_days_hint">Период в днях (напр. 30)</string>
+    <string name="type_hint">Тип</string>
+    <string name="category_hint">Категория</string>
+    <string name="income_type">ДОХОД</string>
+    <string name="expense_type">РАСХОД</string>
+    <string name="cat_debt">Долг</string>
+    <string name="cat_taxes">Налоги</string>
+    <string name="period_format">Каждые %d дн.</string>
+    <string name="error_fill_all">Пожалуйста, заполните все поля</string>
+
     <!-- ИИ Помощник -->
     <string name="ai_assistant_title">ИИ Помощник</string>
     <string name="ai_placeholder">Спросите меня о чем угодно...</string>

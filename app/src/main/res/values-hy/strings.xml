@@ -38,6 +38,21 @@
     <string name="categories">Կատեգորիաներ</string>
     <string name="add_transactions_stats">Ավելացրեք գործարքներ՝ վիճակագրությունը տեսնելու համար</string>
 
+    <!-- Fixed Transactions -->
+    <string name="recurring_transactions">Հաստատուն գործարքներ</string>
+    <string name="add_fixed_transaction">Ավելացնել հաստատուն գործարք</string>
+    <string name="description_hint">Նկարագրություն (օր.՝ Վարձ, Հարկեր)</string>
+    <string name="amount_hint">Գումար</string>
+    <string name="period_days_hint">Ժամանակաշրջան օրերով (օր.՝ 30)</string>
+    <string name="type_hint">Տեսակ</string>
+    <string name="category_hint">Կատեգորիա</string>
+    <string name="income_type">ԵԿԱՄՈՒՏ</string>
+    <string name="expense_type">ԾԱԽՍ</string>
+    <string name="cat_debt">Պարտք</string>
+    <string name="cat_taxes">Հարկեր</string>
+    <string name="period_format">%d օրը մեկ</string>
+    <string name="error_fill_all">Խնդրում ենք լրացնել բոլոր դաշտերը</string>
+
     <!-- AI Assistant -->
     <string name="ai_assistant_title">AI Օգնական</string>
     <string name="ai_placeholder">Հարցրեք ինձ ինչ-որ բան...</string>
